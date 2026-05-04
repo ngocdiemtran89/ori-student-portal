@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ORI Academy — Đăng Nhập</title>
+  <meta name="description" content="Đăng nhập vào ORI Student Portal — Nhật ký học tập, mã giới thiệu, và hơn thế nữa.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/login.css">
+</head>
+<body>
+  <div class="login-page">
+    <!-- Floating particles -->
+    <div class="particles" id="particles"></div>
+
+    <div class="login-container">
+      <div class="login-card">
+        <!-- Logo -->
+        <div class="login-logo">
+          <div class="logo-icon">🎓</div>
+          <h1>ORI Academy</h1>
+          <p>Student Portal</p>
+        </div>
+
+        <!-- Error message -->
+        <div class="login-error" id="login-error">
+          <span>⚠️</span>
+          <span id="error-text"></span>
+        </div>
+
+        <!-- Form -->
+        <form class="login-form" id="login-form">
+          <div class="input-group">
+            <label for="login-name">👤 Họ và Tên</label>
+            <input
+              type="text"
+              id="login-name"
+              placeholder="Nhập đúng họ tên đã đăng ký"
+              autocomplete="name"
+              required
+            >
+          </div>
+
+          <div class="input-group">
+            <label for="login-phone">📱 Số Điện Thoại</label>
+            <input
+              type="tel"
+              id="login-phone"
+              placeholder="VD: 0901234567"
+              autocomplete="tel"
+              required
+            >
+          </div>
+
+          <button type="submit" class="login-btn" id="login-btn">
+            <span id="login-btn-text">Đăng Nhập</span>
+          </button>
+        </form>
+
+        <!-- Footer -->
+        <div class="login-footer">
+          <p>Chưa có tài khoản? <a href="https://zalo.me/0906303373" target="_blank">Liên hệ ORI Academy</a></p>
+          <p style="margin-top: 8px; font-size: 0.7rem;">📍 135 Bạch Đằng, Tân Bình &nbsp;|&nbsp; ☎️ 0906 303 373</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // ── Redirect if already logged in ──
+    if (Auth.isLoggedIn()) {
+      window.location.href = 'dashboard.html';
+    }
+
+    // ── Floating particles ──
+    (function createParticles() {
+      const container = document.getElementById('particles');
+      for (let i = 0; i < 20; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.width = p.style.height = (Math.random() * 4 + 2) + 'px';
+        p.style.animationDuration = (Math.random() * 15 + 10) + 's';
+        p.style.animationDelay = (Math.random() * 10) + 's';
+        p.style.opacity = Math.random() * 0.3 + 0.1;
+        container.appendChild(p);
+      }
+    })();
+
+    // ── Login form ──
+    const form = document.getElementById('login-form');
+    const errorBox = document.getElementById('login-error');
+    const errorText = document.getElementById('error-text');
+    const loginBtn = document.getElementById('login-btn');
+    const loginBtnText = document.getElementById('login-btn-text');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const hoTen = document.getElementById('login-name').value.trim();
+      const sdt = document.getElementById('login-phone').value.trim().replace(/\s/g, '');
+
+      if (!hoTen || !sdt) {
+        showError('Vui lòng nhập đầy đủ thông tin.');
+        return;
+      }
+
+      // Show loading
+      loginBtn.disabled = true;
+      loginBtnText.innerHTML = '<div class="spinner"></div> Đang đăng nhập...';
+      errorBox.classList.remove('show');
+
+      try {
+        const result = await API.login(hoTen, sdt);
+
+        if (result.ok) {
+          Auth.save(result.data);
+          loginBtnText.textContent = '✅ Thành công!';
+          setTimeout(() => {
+            window.location.href = 'dashboard.html';
+          }, 500);
+        } else {
+          showError(result.error || 'Đăng nhập thất bại. Vui lòng thử lại.');
+          resetBtn();
+        }
+      } catch (err) {
+        showError('Không thể kết nối. Vui lòng kiểm tra mạng.');
+        resetBtn();
+      }
+    });
+
+    function showError(msg) {
+      errorText.textContent = msg;
+      errorBox.classList.add('show');
+    }
+
+    function resetBtn() {
+      loginBtn.disabled = false;
+      loginBtnText.textContent = 'Đăng Nhập';
+    }
+  </script>
+</body>
+</html>

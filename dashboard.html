@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ORI Academy — Student Portal</title>
+  <meta name="description" content="ORI Academy Student Portal — Nhật ký học tập, giới thiệu bạn bè, theo dõi hoa hồng.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+  <link rel="stylesheet" href="styles/main.css">
+  <link rel="stylesheet" href="styles/dashboard.css">
+</head>
+<body>
+  <div class="dashboard-layout">
+    <!-- Mobile overlay -->
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <!-- ═══ SIDEBAR ═══ -->
+    <aside class="sidebar" id="sidebar">
+      <!-- Brand -->
+      <div class="sidebar-header">
+        <div class="sidebar-brand">
+          <div class="brand-icon">🎓</div>
+          <div>
+            <div class="brand-name">ORI Academy</div>
+            <div class="brand-sub">Student Portal</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- User -->
+      <div class="sidebar-user">
+        <div class="avatar" id="sidebar-avatar">U</div>
+        <div>
+          <div class="user-name" id="sidebar-user-name">Học viên</div>
+          <div class="user-status" id="sidebar-user-status">—</div>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <div class="nav-section-title">📊 Tổng Quan</div>
+          <div class="nav-item active" data-tab="overview">
+            <span class="nav-icon">🏠</span> Trang Chủ
+          </div>
+          <div class="nav-item" data-tab="history">
+            <span class="nav-icon">📝</span> Nhật Ký Học Tập
+          </div>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">🔗 Chia Sẻ</div>
+          <div class="nav-item" data-tab="referral">
+            <span class="nav-icon">📊</span> Thống Kê Giới Thiệu
+          </div>
+          <div class="nav-item" data-tab="policy">
+            <span class="nav-icon">📋</span> Chính Sách Chia Sẻ
+          </div>
+          <div class="nav-item" data-tab="commission">
+            <span class="nav-icon">💰</span> Hoa Hồng Của Bạn
+          </div>
+        </div>
+
+        <div class="nav-section">
+          <div class="nav-section-title">⚙️ Tài Khoản</div>
+          <div class="nav-item" data-tab="courses">
+            <span class="nav-icon">📚</span> Gói Khóa Học
+          </div>
+          <div class="nav-item" data-tab="profile">
+            <span class="nav-icon">👤</span> Thông Tin Cá Nhân
+          </div>
+        </div>
+      </nav>
+
+      <!-- Logout -->
+      <div class="sidebar-footer">
+        <button class="logout-btn" id="logout-btn">
+          <span>🚪</span> Đăng Xuất
+        </button>
+      </div>
+    </aside>
+
+    <!-- ═══ MAIN CONTENT ═══ -->
+    <main class="main-content">
+      <!-- Header -->
+      <header class="main-header">
+        <div class="header-left">
+          <button class="menu-toggle" id="menu-toggle">☰</button>
+          <h2 class="page-title" id="page-title">Tổng Quan</h2>
+        </div>
+        <div class="header-right">
+          <span class="header-date" id="header-date"></span>
+        </div>
+      </header>
+
+      <!-- Page Content -->
+      <div class="page-content">
+
+        <!-- ═══ TAB: OVERVIEW ═══ -->
+        <div class="tab-content active" id="tab-overview">
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon purple">📘</div>
+              <div>
+                <div class="stat-value" id="overview-course">—</div>
+                <div class="stat-label">Khóa học hiện tại</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon blue">📅</div>
+              <div>
+                <div class="stat-value" id="overview-start-date">—</div>
+                <div class="stat-label">Ngày vào học</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon green">📝</div>
+              <div>
+                <div class="stat-value" id="overview-lessons">0</div>
+                <div class="stat-label">Buổi đã học</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon orange">👥</div>
+              <div>
+                <div class="stat-value" id="overview-referred">0</div>
+                <div class="stat-label">Đã giới thiệu</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick referral card -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <span class="card-title">🔗 Mã Giới Thiệu Của Bạn</span>
+            </div>
+            <div class="flex items-center gap-md" style="flex-wrap: wrap;">
+              <div style="flex:1; min-width: 200px;">
+                <div class="text-sm text-muted" style="margin-bottom: 4px;">Mã code</div>
+                <div class="text-2xl font-bold text-accent" id="overview-ref-code">—</div>
+              </div>
+              <div>
+                <div class="text-sm text-muted" style="margin-bottom: 4px;">Trạng thái</div>
+                <div class="font-semibold" id="overview-status">—</div>
+              </div>
+              <div>
+                <div class="text-sm text-muted" style="margin-bottom: 4px;">Hoa hồng tích lũy</div>
+                <div class="text-xl font-bold" style="color: var(--success);" id="overview-commission">0đ</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick info -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">💡 Hướng Dẫn Nhanh</span>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+              <div class="policy-step" style="margin-bottom:0; background: var(--bg-input);">
+                <div class="step-number">1</div>
+                <div>
+                  <div class="step-title">Sao chép mã giới thiệu</div>
+                  <div class="step-desc">Vào tab "Thống Kê Giới Thiệu" để copy link của bạn.</div>
+                </div>
+              </div>
+              <div class="policy-step" style="margin-bottom:0; background: var(--bg-input);">
+                <div class="step-number">2</div>
+                <div>
+                  <div class="step-title">Gửi cho bạn bè</div>
+                  <div class="step-desc">Bạn bè đăng ký qua mã của bạn được giảm 5% học phí.</div>
+                </div>
+              </div>
+              <div class="policy-step" style="margin-bottom:0; background: var(--bg-input);">
+                <div class="step-number">3</div>
+                <div>
+                  <div class="step-title">Nhận hoa hồng 10%</div>
+                  <div class="step-desc">Bạn nhận 10% giá khóa học mà bạn bè đăng ký.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB: HISTORY ═══ -->
+        <div class="tab-content" id="tab-history">
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">📝 Lịch Sử Học Tập</span>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Ngày</th>
+                    <th>Bài học</th>
+                    <th>Điểm danh</th>
+                    <th>Điểm</th>
+                    <th>Ghi chú</th>
+                  </tr>
+                </thead>
+                <tbody id="history-tbody">
+                  <tr><td colspan="6" class="text-center text-muted" style="padding:40px">⏳ Đang tải...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB: REFERRAL ═══ -->
+        <div class="tab-content" id="tab-referral">
+          <!-- Referral link -->
+          <div class="referral-box">
+            <h3>🔗 Link giới thiệu của bạn</h3>
+            <div class="referral-link-wrapper">
+              <input type="text" class="referral-link-input" id="referral-link" readonly>
+              <button class="btn-copy" id="copy-ref-btn">📋 Sao chép</button>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="stats-grid" style="margin-bottom: 28px;">
+            <div class="stat-card">
+              <div class="stat-icon purple">👥</div>
+              <div>
+                <div class="stat-value" id="ref-total">0</div>
+                <div class="stat-label">Đã giới thiệu</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon green">💰</div>
+              <div>
+                <div class="stat-value" id="ref-commission-total">0đ</div>
+                <div class="stat-label">Tổng hoa hồng</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Referral list -->
+          <div class="card" style="margin-bottom: 28px;">
+            <div class="card-header">
+              <span class="card-title">📋 Danh Sách Người Được Giới Thiệu</span>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Học viên</th>
+                    <th>Khóa học</th>
+                    <th>Hoa hồng</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody id="referral-tbody">
+                  <tr><td colspan="5" class="text-center text-muted" style="padding:40px">⏳ Đang tải...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Leaderboard -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">🏆 Top Người Giới Thiệu</span>
+              <span class="text-sm text-muted">Bảng xếp hạng toàn trung tâm</span>
+            </div>
+            <div class="leaderboard-list" id="leaderboard-list">
+              <div class="empty-state"><div class="spinner" style="margin:0 auto"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB: POLICY ═══ -->
+        <div class="tab-content" id="tab-policy">
+          <div class="policy-section">
+            <div class="card" style="margin-bottom: 28px;">
+              <div class="card-header">
+                <span class="card-title">📋 Chính Sách Giới Thiệu ORI Academy</span>
+              </div>
+              <p class="text-muted" style="margin-bottom: 24px; line-height: 1.7;">
+                Mỗi học viên ORI Academy đều có một <strong class="text-accent">Mã Giới Thiệu (Referral Code)</strong> riêng. 
+                Khi bạn bè đăng ký khóa học qua mã này, cả hai bên đều được hưởng ưu đãi!
+              </p>
+
+              <div class="policy-step">
+                <div class="step-number">1</div>
+                <div>
+                  <div class="step-title">🎁 Bạn bè được giảm 5% học phí</div>
+                  <div class="step-desc">Người được giới thiệu sẽ nhận ngay ưu đãi giảm 5% trên giá khóa học khi đăng ký qua mã của bạn.</div>
+                </div>
+              </div>
+
+              <div class="policy-step">
+                <div class="step-number">2</div>
+                <div>
+                  <div class="step-title">💰 Bạn nhận 10% hoa hồng</div>
+                  <div class="step-desc">Người giới thiệu nhận 10% giá trị khóa học mà bạn bè đăng ký. Hoa hồng được tích lũy và quy đổi thành tiền mặt.</div>
+                </div>
+              </div>
+
+              <div class="policy-step">
+                <div class="step-number">3</div>
+                <div>
+                  <div class="step-title">📊 Theo dõi minh bạch</div>
+                  <div class="step-desc">Mọi thông tin giới thiệu đều được hiển thị trên portal: danh sách người được GT, số tiền hoa hồng, trạng thái thanh toán.</div>
+                </div>
+              </div>
+
+              <div class="policy-step">
+                <div class="step-number">4</div>
+                <div>
+                  <div class="step-title">🏆 Bảng xếp hạng</div>
+                  <div class="step-desc">Top người giới thiệu nhiều nhất sẽ được vinh danh trên bảng xếp hạng toàn trung tâm.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <span class="card-title">❓ Câu Hỏi Thường Gặp</span>
+              </div>
+              <div style="display:flex; flex-direction:column; gap: 16px;">
+                <div>
+                  <p class="font-semibold" style="margin-bottom: 4px;">Hoa hồng được thanh toán khi nào?</p>
+                  <p class="text-sm text-muted">Hoa hồng được thanh toán vào cuối mỗi tháng qua chuyển khoản ngân hàng hoặc tiền mặt tại trung tâm.</p>
+                </div>
+                <div>
+                  <p class="font-semibold" style="margin-bottom: 4px;">Có giới hạn số người giới thiệu không?</p>
+                  <p class="text-sm text-muted">Không! Bạn có thể giới thiệu không giới hạn và nhận hoa hồng cho mỗi người đăng ký thành công.</p>
+                </div>
+                <div>
+                  <p class="font-semibold" style="margin-bottom: 4px;">Bạn bè cần làm gì để nhận ưu đãi?</p>
+                  <p class="text-sm text-muted">Bạn bè chỉ cần cung cấp mã giới thiệu của bạn khi liên hệ đăng ký tại ORI Academy.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB: COMMISSION ═══ -->
+        <div class="tab-content" id="tab-commission">
+          <div class="commission-summary">
+            <div class="commission-card total">
+              <div class="amount" id="comm-total">0đ</div>
+              <div class="label">Tổng hoa hồng</div>
+            </div>
+            <div class="commission-card paid">
+              <div class="amount" id="comm-paid">0đ</div>
+              <div class="label">Đã thanh toán</div>
+            </div>
+            <div class="commission-card unpaid">
+              <div class="amount" id="comm-unpaid">0đ</div>
+              <div class="label">Chờ thanh toán</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">💰 Chi Tiết Hoa Hồng</span>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>STT</th>
+                    <th>Người được GT</th>
+                    <th>Khóa học</th>
+                    <th>Giá gốc</th>
+                    <th>Hoa hồng (10%)</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody id="commission-tbody">
+                  <tr><td colspan="6" class="text-center text-muted" style="padding:40px">⏳ Đang tải...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB: COURSES ═══ -->
+        <div class="tab-content" id="tab-courses">
+          <div class="courses-grid" id="courses-grid">
+            <div class="empty-state"><div class="spinner" style="margin:0 auto"></div><p class="text-muted" style="margin-top:16px">Đang tải khóa học...</p></div>
+          </div>
+        </div>
+
+        <!-- ═══ TAB: PROFILE ═══ -->
+        <div class="tab-content" id="tab-profile">
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <span class="card-title">👤 Thông Tin Cá Nhân</span>
+            </div>
+            <div class="profile-grid">
+              <div class="profile-field">
+                <span class="field-label">Họ và tên</span>
+                <span class="field-value" id="profile-name">—</span>
+              </div>
+              <div class="profile-field">
+                <span class="field-label">Số điện thoại</span>
+                <span class="field-value" id="profile-phone">—</span>
+              </div>
+              <div class="profile-field">
+                <span class="field-label">CCCD</span>
+                <span class="field-value" id="profile-cccd">—</span>
+              </div>
+              <div class="profile-field">
+                <span class="field-label">Email</span>
+                <span class="field-value" id="profile-email">—</span>
+              </div>
+              <div class="profile-field">
+                <span class="field-label">Ngày vào học</span>
+                <span class="field-value" id="profile-start">—</span>
+              </div>
+              <div class="profile-field">
+                <span class="field-label">Khóa học</span>
+                <span class="field-value" id="profile-course">—</span>
+              </div>
+              <div class="profile-field">
+                <span class="field-label">Trạng thái</span>
+                <span class="field-value" id="profile-status">—</span>
+              </div>
+              <div class="profile-field">
+                <span class="field-label">Mã giới thiệu</span>
+                <span class="field-value text-accent" id="profile-ref-code">—</span>
+              </div>
+              <div class="profile-field">
+                <span class="field-label">Ngày tạo tài khoản</span>
+                <span class="field-value" id="profile-created">—</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /page-content -->
+    </main>
+  </div>
+
+  <script src="js/api.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
