@@ -504,13 +504,40 @@ function setupSheets() {
   sh = ss.getSheetByName(SH.KHOA_HOC);
   if (!sh) {
     sh = ss.insertSheet(SH.KHOA_HOC);
-    sh.appendRow(['MaKH','TenKhoaHoc','MoTa','ThoiLuong','GiaGoc','GiaKM','TrangThai','Icon']);
-    sh.appendRow(['TOEIC-450','TOEIC 450+','Khóa học TOEIC cơ bản, phù hợp cho người mới bắt đầu. Luyện nghe + đọc nền tảng.','3 tháng',3500000,2990000,'DangMo','📘']);
-    sh.appendRow(['TOEIC-650','TOEIC 650+','Nâng cao kỹ năng TOEIC lên 650+. Chiến lược làm bài + luyện đề chuyên sâu.','4 tháng',5500000,4990000,'DangMo','📗']);
-    sh.appendRow(['TOEIC-850','TOEIC 850+','Mục tiêu 850+ cho dân chuyên. Full mock tests + 1-on-1 coaching.','6 tháng',8500000,7490000,'DangMo','📕']);
-    sh.appendRow(['IELTS-5.5','IELTS 5.5','Khóa IELTS Foundation. 4 kỹ năng cơ bản cho người bắt đầu.','4 tháng',6500000,5990000,'DangMo','🌍']);
-    sh.appendRow(['IELTS-6.5','IELTS 6.5+','Khóa IELTS nâng cao, tập trung Writing + Speaking. Band 6.5 cam kết.','6 tháng',9500000,8490000,'DangMo','🎯']);
-    sh.appendRow(['SPEAK-BIZ','Business English','Tiếng Anh thương mại, email + presentation + meeting. Cho dân đi làm.','3 tháng',4500000,3990000,'DangMo','💼']);
+    sh.appendRow(['MaKH','TenKhoaHoc','Nhom','MoTa','ThoiLuong','SoBuoi','GiaGoc','GiaKM','DoiTuong','UuDai','TrangThai','Icon']);
+    
+    // ── TOEIC ──
+    sh.appendRow(['KH01','TOEIC Cơ Bản 12 Buổi','TOEIC','Nền tảng vững chắc','1 tháng','12 buổi/tháng',1600000,'','','Ưu đãi nhóm','DangMo','📘']);
+    sh.appendRow(['KH02','TOEIC Nâng Cao 20 Buổi','TOEIC','Tăng khoảng 50 điểm','1 tháng','20 buổi/tháng',2500000,'','','Ưu đãi nhóm','DangMo','📗']);
+    sh.appendRow(['KH03','TOEIC 600','TOEIC','Đạt 500-600 điểm','10-12 tháng','Không giới hạn',12000000,'','','Tặng lý viết & CV 1 lần','DangMo','📕']);
+    sh.appendRow(['KH04','TOEIC 750','TOEIC','Đạt 610-750 điểm','Đến khi đạt','Không giới hạn',15000000,'','','Tặng lý viết & CV 1 lần','DangMo','🏆']);
+    
+    // ── GIAO TIẾP ──
+    sh.appendRow(['KH05','Giao Tiếp Chuẩn Quốc Tế','Giao Tiếp','Phản xạ + trợ giảng nước ngoài','6 tháng (+2 bonus)','Không giới hạn',15000000,'','','Đối tác >10 HV mới 1DP miễn phí','DangMo','🌍']);
+    
+    // ── HÀNG KHÔNG ──
+    sh.appendRow(['KH06','TA Chuyên Ngành Hàng Không','Hàng Không','Sách chuyên ngành, chuẩn training','2 tháng','Max 15 HV/lớp',10000000,'','','','DangMo','✈️']);
+    
+    // ── AI TOOLS ──
+    sh.appendRow(['KH07','Kỹ Năng AI Trong Học Tập','AI Tools','7 AI tools chuyên dụng','1 tháng','10 buổi',3000000,'','','Tặng TK Gemini Pro + App ghi bài','DangMo','🤖']);
+    
+    // ── COMBO ──
+    sh.appendRow(['KH08','Combo TOEIC 600 & Giao Tiếp','Combo','TOEIC 650-700+ & Giao tiếp','12 tháng','Không giới hạn',12000000,'','','Tiết kiệm 7 triệu + CV 1 lần','DangMo','🎁']);
+    sh.appendRow(['KH09','Combo TOEIC 750 & Giao Tiếp','Combo','TOEIC 650-700+ & Giao tiếp','12 tháng','Không giới hạn',25000000,'','','Tiết kiệm 18tr + CV 3 lần','DangMo','💎']);
+    
+    // ── TRỌN ĐỜI ──
+    sh.appendRow(['KH10','Lộ Trình NV Mặt Đất','Trọn Đời','TOEIC + GT + HK + AI + PV mặt đất','Đến khi có việc','Không giới hạn',35000000,'','','','DangMo','🛫']);
+    sh.appendRow(['KH11','Lộ Trình Tiếp Viên HK','Trọn Đời','TOEIC + GT + HK + AI + PV tiếp viên','Đến khi có việc','Không giới hạn',45000000,'','','','DangMo','👩‍✈️']);
+    
+    // ── PV TIẾP VIÊN ──
+    sh.appendRow(['PV01','PV Basic – Ready to Fly','PV Tiếp Viên','Coaching cấp tốc hãng nội địa','Theo lịch coaching','6 buổi 1-1',3000000,'','Cần bổ sung cho hồ sơ','Tặng 1 CV miễn phí','DangMo','🛩️']);
+    sh.appendRow(['PV02','PV Silver – Confidence Booster','PV Tiếp Viên','Toàn diện phỏng vấn','Theo lịch coaching','12 buổi 1-1',5000000,'','Muốn thi 2-3 hãng nội địa','2 lần CV + Tặng GT Phỏng vấn','DangMo','🥈']);
+    sh.appendRow(['PV03','PV Premium – Global Reach','PV Tiếp Viên','Chinh phục hàng quốc tế','Theo lịch coaching','16 buổi 1-1',8000000,'','Emirates, Qatar, EVA...','3 lần CV + 2 Tặng GT Phỏng vấn','DangMo','🥇']);
+    
+    // ── PV MẶT ĐẤT ──
+    sh.appendRow(['PV04','PV Elite – The Career Partner','PV Mặt Đất','Đồng hành chỉnh luyện, cam kết sát thi','Theo lịch coaching','Không giới hạn',10000000,'','Muốn bám đậm, không giới hạn','3 lần CV + 2 Tặng GT','DangMo','⭐']);
+    sh.appendRow(['PV05','Ground Basic – Ready for Counter','PV Mặt Đất','Coaching trọng tâm vị trí mặt đất','Theo lịch coaching','6 buổi 1-1',3000000,'','Check-in, Lounge, Gate, Ticketing','Tặng 1 lần CV miễn phí','DangMo','🎫']);
+    sh.appendRow(['PV06','Ground Guarantee – Hired & Safe','PV Mặt Đất','Bảo hành đến khi đậu mặt đất','Đến khi đậu','Không giới hạn',10000000,'','SASCO, VIAGS, SAGS, hãng bay...','2 lần CV miễn phí','DangMo','🛡️']);
   }
   
   Logger.log('✅ Tất cả sheets đã được tạo thành công!');

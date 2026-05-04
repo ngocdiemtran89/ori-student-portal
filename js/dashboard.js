@@ -306,16 +306,23 @@ const Dashboard = (() => {
 
     grid.innerHTML = courses.map(c => {
       const hasDiscount = c.GiaKM && c.GiaKM < c.GiaGoc;
+      const nhomColors = {
+        'TOEIC': 'badge-info', 'Giao Tiếp': 'badge-success', 'Hàng Không': 'badge-purple',
+        'AI Tools': 'badge-warning', 'Combo': 'badge-danger', 'Trọn Đời': 'badge-danger',
+        'PV Tiếp Viên': 'badge-purple', 'PV Mặt Đất': 'badge-info',
+      };
       return `
         <div class="course-card animate-fade-in">
-          ${hasDiscount ? '<span class="course-badge badge badge-danger">🔥 Khuyến mãi</span>' : ''}
+          <span class="course-badge badge ${nhomColors[c.Nhom] || 'badge-info'}">${c.Nhom || ''}</span>
           <div class="course-icon">${c.Icon || '📘'}</div>
           <div class="course-name">${c.TenKhoaHoc || c.MaKH}</div>
           <div class="course-desc">${c.MoTa || ''}</div>
+          ${c.DoiTuong ? `<div class="text-xs" style="color:var(--text-accent);margin-bottom:8px">🎯 ${c.DoiTuong}</div>` : ''}
           <div class="course-meta">
             <span>⏱ ${c.ThoiLuong || '—'}</span>
-            <span>📋 ${c.MaKH || ''}</span>
+            <span>📋 ${c.SoBuoi || '—'}</span>
           </div>
+          ${c.UuDai ? `<div class="text-xs" style="color:var(--success);margin-bottom:12px">🎁 ${c.UuDai}</div>` : ''}
           <div class="course-price">
             <span class="price-current">${formatMoney(c.GiaKM || c.GiaGoc || 0)}</span>
             ${hasDiscount ? `<span class="price-original">${formatMoney(c.GiaGoc)}</span>` : ''}
