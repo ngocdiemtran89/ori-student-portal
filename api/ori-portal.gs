@@ -4,7 +4,7 @@
 // ╚══════════════════════════════════════════════════════════╝
 
 // ── CẤU HÌNH ──
-const SHEET_ID = 'ĐIỀN_SHEET_ID_CỦA_BẠN_VÀO_ĐÂY';
+const SHEET_ID = '1fMv_ckTvJTwOiAjiCIzdQx7oobwbJyx_oeeDUnI8VWI';
 
 const SH = {
   HOC_VIEN   : 'HocVien',
