@@ -1,13 +1,186 @@
+# Các file nguồn quan trọng
+
+Dưới đây là nội dung chi tiết các file `js/api.js`, `js/auth.js`, `dashboard.html`, và `styles/main.css` để team có thể tích hợp PWA và xem xét logic giao diện.
+
+
+## `js/api.js`
+```javascript
+// ══════════════════════════════════════════════════════════
+//   ORI STUDENT PORTAL — API MODULE
+//   Handles all communication with Google Apps Script
+// ══════════════════════════════════════════════════════════
+
+const API = (() => {
+  // ⚠️ THAY ĐỔI SAU KHI DEPLOY APPS SCRIPT
+  const BASE_URL = 'https://script.google.com/macros/s/AKfycbzsdLmNQml4XonIzofnWr7ITeNipdCVJOzF6vCjdgl53kxkaMfM2r6MTtjqWFfIwUep/exec';
+
+  async function request(method, params = {}) {
+    try {
+      let url;
+
+      if (method === 'POST') {
+        // Google Apps Script redirect POST→GET gây lỗi
+        // Giải pháp: gửi qua GET với param 'payload'
+        const payload = encodeURIComponent(JSON.stringify(params));
+        url = `${BASE_URL}?action=${params.action || ''}&payload=${payload}`;
+      } else {
+        const query = new URLSearchParams(params).toString();
+        url = `${BASE_URL}?${query}`;
+      }
+
+      const resp = await fetch(url, { method: 'GET', redirect: 'follow' });
+      const data = await resp.json();
+      return data;
+    } catch (err) {
+      console.error('API Error:', err);
+      return { ok: false, error: 'Không thể kết nối đến server. Vui lòng thử lại.' };
+    }
+  }
+
+  return {
+    // ── Auth ──
+    login(hoTen, sdt) {
+      return request('POST', { action: 'login', hoTen, sdt });
+    },
+
+    // ── Profile ──
+    getProfile(maHV) {
+      return request('GET', { action: 'profile', maHV });
+    },
+
+    // ── Learning History ──
+    getHistory(maHV) {
+      return request('GET', { action: 'history', maHV });
+    },
+
+    // ── Referral ──
+    getReferralStats(maHV) {
+      return request('GET', { action: 'referral', maHV });
+    },
+
+    // ── Leaderboard ──
+    getLeaderboard() {
+      return request('GET', { action: 'leaderboard' });
+    },
+
+    // ── Courses ──
+    getCourses() {
+      return request('GET', { action: 'courses' });
+    },
+
+    // ── Registration ──
+    register(data) {
+      return request('POST', { action: 'register', ...data });
+    },
+
+    // ── Test ──
+    test() {
+      return request('GET', { action: 'test' });
+    },
+
+    // ── Public ──
+    lookupRef(refCode) {
+      return request('GET', { action: 'lookup_ref', ref: refCode });
+    },
+
+    // ── Admin (protected by secret) ──
+    adminListStudents() {
+      return request('POST', { action: 'admin_list_students', secret: API.getSecret() });
+    },
+    adminAddStudent(data) {
+      return request('POST', { action: 'admin_add_student', secret: API.getSecret(), ...data });
+    },
+    adminAddHistory(data) {
+      return request('POST', { action: 'admin_add_history', secret: API.getSecret(), ...data });
+    },
+    adminUpdateCommission(rowIndex, status) {
+      return request('POST', { action: 'admin_update_commission', secret: API.getSecret(), rowIndex, status });
+    },
+
+    // Secret management
+    getSecret() {
+      return localStorage.getItem('ori_admin_secret') || '';
+    },
+    setSecret(s) {
+      localStorage.setItem('ori_admin_secret', s);
+    },
+  };
+})();
+
+```
+
+
+## `js/auth.js`
+```javascript
+// ══════════════════════════════════════════════════════════
+//   ORI STUDENT PORTAL — AUTH MODULE
+// ══════════════════════════════════════════════════════════
+
+const Auth = (() => {
+  const STORAGE_KEY = 'ori_portal_user';
+
+  function save(userData) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(userData));
+  }
+
+  function get() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY);
+      return data ? JSON.parse(data) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function clear() {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+
+  function isLoggedIn() {
+    return !!get();
+  }
+
+  function requireAuth() {
+    if (!isLoggedIn()) {
+      window.location.href = 'index.html';
+      return false;
+    }
+    return true;
+  }
+
+  function getMaHV() {
+    const user = get();
+    return user ? user.MaHV : null;
+  }
+
+  function getHoTen() {
+    const user = get();
+    return user ? user.HoTen : '';
+  }
+
+  function getMaGioiThieu() {
+    const user = get();
+    return user ? user.MaGioiThieu : '';
+  }
+
+  function logout() {
+    clear();
+    window.location.href = 'index.html';
+  }
+
+  return { save, get, clear, isLoggedIn, requireAuth, getMaHV, getHoTen, getMaGioiThieu, logout };
+})();
+
+```
+
+
+## `dashboard.html`
+```html
 <!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#6366f1">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="ORI Portal">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <title>ORI Academy — Student Portal</title>
   <meta name="description" content="ORI Academy Student Portal — Nhật ký học tập, giới thiệu bạn bè, theo dõi hoa hồng.">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
@@ -84,9 +257,6 @@
           <div class="nav-section-title">🔐 Quản Trị</div>
           <div class="nav-item" data-tab="admin">
             <span class="nav-icon">⚙️</span> Bảng Điều Khiển
-          </div>
-          <div class="nav-item" data-tab="analytics">
-            <span class="nav-icon">📈</span> Thống Kê
           </div>
         </div>
       </nav>
@@ -737,21 +907,6 @@
           </div>
         </div>
 
-        <!-- ═══ TAB: ANALYTICS ═══ -->
-        <div class="tab-content" id="tab-analytics">
-          <div class="stats-grid" style="margin-bottom:24px">
-            <div class="stat-card"><div class="stat-icon purple">👥</div><div><div class="stat-value" id="an-total">0</div><div class="stat-label">Tổng học viên</div></div></div>
-            <div class="stat-card"><div class="stat-icon blue">🟣</div><div><div class="stat-value" id="an-active">0</div><div class="stat-label">Chính thức</div></div></div>
-            <div class="stat-card"><div class="stat-icon green">🟢</div><div><div class="stat-value" id="an-trial">0</div><div class="stat-label">Học thử</div></div></div>
-            <div class="stat-card"><div class="stat-icon orange">🔗</div><div><div class="stat-value" id="an-referred">0</div><div class="stat-label">Được giới thiệu</div></div></div>
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px;margin-bottom:20px">
-            <div class="card"><div class="card-header"><span class="card-title">🟣 Trạng thái học viên</span></div><div style="height:220px;position:relative"><canvas id="chart-status"></canvas></div></div>
-            <div class="card"><div class="card-header"><span class="card-title">📅 Học viên mới 6 tháng gần nhất</span></div><div style="height:220px;position:relative"><canvas id="chart-monthly"></canvas></div></div>
-          </div>
-          <div class="card"><div class="card-header"><span class="card-title">📚 Phân bổ theo khóa học</span></div><div style="height:240px;position:relative"><canvas id="chart-courses"></canvas></div></div>
-        </div>
-
       </div><!-- /page-content -->
     </main>
   </div>
@@ -849,7 +1004,543 @@
   <script src="js/api.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/dashboard.js"></script>
-  <script src="js/analytics.js"></script>
-  <script>if ('serviceWorker' in navigator) { window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js')); }</script>
 </body>
 </html>
+
+```
+
+
+## `styles/main.css`
+```css
+/* ══════════════════════════════════════════════════════════
+   ORI STUDENT PORTAL — MAIN STYLESHEET
+   Dark theme with navy-to-purple gradient aesthetic
+   ══════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ── CSS Variables ── */
+:root {
+  /* Colors */
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #111827;
+  --bg-card: #1a1f35;
+  --bg-card-hover: #222845;
+  --bg-sidebar: #0d1225;
+  --bg-input: #1e2440;
+  
+  /* Accent */
+  --accent-primary: #6366f1;
+  --accent-secondary: #8b5cf6;
+  --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  --accent-glow: rgba(99, 102, 241, 0.3);
+  
+  /* Status */
+  --success: #10b981;
+  --success-bg: rgba(16, 185, 129, 0.15);
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.15);
+  --info: #3b82f6;
+  --info-bg: rgba(59, 130, 246, 0.15);
+  
+  /* Text */
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-accent: #a5b4fc;
+  
+  /* Borders */
+  --border-color: rgba(148, 163, 184, 0.12);
+  --border-focus: rgba(99, 102, 241, 0.5);
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 20px rgba(99, 102, 241, 0.2);
+  
+  /* Layout */
+  --sidebar-width: 260px;
+  --header-height: 70px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  
+  /* Transitions */
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: all 0.15s ease;
+}
+
+/* ── Reset ── */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--text-accent);
+  text-decoration: none;
+  transition: var(--transition-fast);
+}
+
+a:hover {
+  color: var(--accent-primary);
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  outline: none;
+}
+
+/* ── Utility Classes ── */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.justify-center { justify-content: center; }
+.gap-sm { gap: 8px; }
+.gap-md { gap: 16px; }
+.gap-lg { gap: 24px; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.text-sm { font-size: 0.875rem; }
+.text-xs { font-size: 0.75rem; }
+.text-lg { font-size: 1.125rem; }
+.text-xl { font-size: 1.25rem; }
+.text-2xl { font-size: 1.5rem; }
+.text-3xl { font-size: 1.875rem; }
+.text-muted { color: var(--text-secondary); }
+.text-accent { color: var(--text-accent); }
+.mt-auto { margin-top: auto; }
+.w-full { width: 100%; }
+.hidden { display: none !important; }
+
+/* ── Card Component ── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  transition: var(--transition);
+}
+
+.card:hover {
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: var(--shadow-glow);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ── Badge ── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge-success {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.badge-warning {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.badge-danger {
+  background: var(--danger-bg);
+  color: var(--danger);
+}
+
+.badge-info {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.badge-purple {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+}
+
+/* ── Button ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--accent-gradient);
+  color: white;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: var(--bg-input);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-primary);
+}
+
+.btn-copy {
+  background: var(--accent-gradient);
+  color: white;
+  padding: 10px 24px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.btn-copy:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+/* ── Table ── */
+.table-container {
+  overflow-x: auto;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead th {
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 12px 16px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+tbody tr {
+  transition: var(--transition-fast);
+}
+
+tbody tr:hover {
+  background: rgba(99, 102, 241, 0.05);
+}
+
+/* ── Input ── */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.input-group label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.input-group input,
+.input-group select {
+  background: var(--bg-input);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  color: var(--text-primary);
+  transition: var(--transition);
+}
+
+.input-group input:focus,
+.input-group select:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.input-group input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ── Stat Card ── */
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  transition: var(--transition);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow);
+}
+
+.stat-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.stat-icon.purple { background: rgba(139, 92, 246, 0.15); }
+.stat-icon.blue   { background: rgba(59, 130, 246, 0.15); }
+.stat-icon.green  { background: rgba(16, 185, 129, 0.15); }
+.stat-icon.orange { background: rgba(245, 158, 11, 0.15); }
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* ── Avatar ── */
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  color: white;
+  flex-shrink: 0;
+}
+
+.avatar-sm { width: 32px; height: 32px; font-size: 0.8rem; }
+.avatar-lg { width: 56px; height: 56px; font-size: 1.4rem; }
+.avatar-xl { width: 80px; height: 80px; font-size: 2rem; }
+
+/* ── Toast Notification ── */
+.toast {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  padding: 14px 24px;
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  font-size: 0.9rem;
+  z-index: 9999;
+  transform: translateY(120%);
+  opacity: 0;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-lg);
+}
+
+.toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toast-success {
+  background: var(--success);
+  color: white;
+}
+
+.toast-error {
+  background: var(--danger);
+  color: white;
+}
+
+/* ── Loading Spinner ── */
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--accent-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 14, 26, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 9998;
+  backdrop-filter: blur(4px);
+}
+
+.loading-overlay .spinner {
+  width: 40px;
+  height: 40px;
+}
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.6; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.animate-slide-left {
+  animation: slideInLeft 0.4s ease forwards;
+}
+
+.animate-slide-right {
+  animation: slideInRight 0.4s ease forwards;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--text-muted);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px;
+    --header-height: 60px;
+  }
+  
+  .stat-card {
+    padding: 16px;
+  }
+  
+  .stat-value {
+    font-size: 1.4rem;
+  }
+  
+  .card {
+    padding: 16px;
+  }
+  
+  thead th, tbody td {
+    padding: 10px 12px;
+  }
+}
+
+```

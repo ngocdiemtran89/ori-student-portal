@@ -100,6 +100,7 @@ const Dashboard = (() => {
       courses: 'Gói Khóa Học',
       profile: 'Thông Tin Cá Nhân',
       guide: 'Hướng Dẫn Sử Dụng',
+      analytics: '📈 Thống Kê',
       admin: '🔐 Bảng Điều Khiển Admin',
     };
     const titleEl = document.getElementById('page-title');
@@ -139,6 +140,9 @@ const Dashboard = (() => {
         break;
       case 'profile':
         loadProfile(maHV);
+        break;
+      case 'analytics':
+        loadAnalytics();
         break;
       case 'admin':
         loadAdmin();
