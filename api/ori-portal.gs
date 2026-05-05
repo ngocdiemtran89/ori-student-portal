@@ -148,7 +148,12 @@ function handleLogin(hoTen, sdt) {
     const rowName  = String(rows[i][iHoTen]).trim().toLowerCase();
     const rowPhone = String(rows[i][iSDT]).trim().replace(/\s/g, '');
     
-    if (rowName === normalizedName && rowPhone === normalizedPhone) {
+    // So sánh SĐT: xử lý trường hợp Sheet xóa số 0 đầu (010813 → 10813)
+    const phoneMatch = rowPhone === normalizedPhone 
+      || rowPhone === normalizedPhone.replace(/^0+/, '') 
+      || normalizedPhone === rowPhone.replace(/^0+/, '');
+    
+    if (rowName === normalizedName && phoneMatch) {
       // Tìm thấy → Trả về profile
       const profile = {};
       headers.forEach((h, idx) => {
