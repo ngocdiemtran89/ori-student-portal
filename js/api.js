@@ -61,6 +61,11 @@ const API = (() => {
       return request('GET', { action: 'courses' });
     },
 
+    // ── Registration ──
+    register(data) {
+      return request('POST', { action: 'register', ...data });
+    },
+
     // ── Test ──
     test() {
       return request('GET', { action: 'test' });

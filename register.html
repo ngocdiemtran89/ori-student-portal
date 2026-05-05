@@ -156,8 +156,8 @@
           return;
         }
 
-        // Đăng ký mới qua API.adminAddStudent (public register)
-        const regResult = await API.adminAddStudent({
+        // Đăng ký mới qua API.register (public)
+        const regResult = await API.register({
           hoTen,
           sdt,
           email: document.getElementById('reg-email').value.trim(),
