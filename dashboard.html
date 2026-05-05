@@ -73,6 +73,14 @@
             <span class="nav-icon">📖</span> Hướng Dẫn Sử Dụng
           </div>
         </div>
+
+        <!-- Admin nav (hidden by default, shown by JS) -->
+        <div class="nav-section" id="admin-nav" style="display:none">
+          <div class="nav-section-title">🔐 Quản Trị</div>
+          <div class="nav-item" data-tab="admin">
+            <span class="nav-icon">⚙️</span> Bảng Điều Khiển
+          </div>
+        </div>
       </nav>
 
       <!-- Logout -->
@@ -652,8 +660,167 @@
           </div>
         </div>
 
+        <!-- ═══ TAB: ADMIN ═══ -->
+        <div class="tab-content" id="tab-admin">
+          <!-- Admin stats -->
+          <div class="stats-grid" style="margin-bottom:24px">
+            <div class="stat-card">
+              <div class="stat-icon purple">👥</div>
+              <div>
+                <div class="stat-value" id="admin-total-students">0</div>
+                <div class="stat-label">Tổng học viên</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon green">🟢</div>
+              <div>
+                <div class="stat-value" id="admin-active-students">0</div>
+                <div class="stat-label">Đang học</div>
+              </div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon blue">📝</div>
+              <div>
+                <div class="stat-value" id="admin-trial-students">0</div>
+                <div class="stat-label">Học thử</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick actions -->
+          <div class="card" style="margin-bottom:24px;">
+            <div class="card-header">
+              <span class="card-title">⚡ Thao Tác Nhanh</span>
+            </div>
+            <div style="display:flex; gap:12px; flex-wrap:wrap;">
+              <button class="login-btn" style="width:auto; padding:10px 20px; font-size:0.85rem;" onclick="document.getElementById('modal-add-student').style.display='flex'">
+                🆕 Thêm Học Viên
+              </button>
+              <button class="login-btn" style="width:auto; padding:10px 20px; font-size:0.85rem; background:linear-gradient(135deg, #10b981, #34d399);" onclick="document.getElementById('modal-add-history').style.display='flex'">
+                📝 Thêm Nhật Ký
+              </button>
+            </div>
+          </div>
+
+          <!-- Student list -->
+          <div class="card">
+            <div class="card-header">
+              <span class="card-title">📋 Danh Sách Học Viên</span>
+              <span class="text-sm text-muted" id="admin-student-count"></span>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mã HV</th>
+                    <th>Họ tên</th>
+                    <th>SĐT</th>
+                    <th>Khóa học</th>
+                    <th>Mã GT</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày vào</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-students-tbody">
+                  <tr><td colspan="7" class="text-center text-muted" style="padding:40px">⏳ Đang tải...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
       </div><!-- /page-content -->
     </main>
+  </div>
+
+  <!-- ═══ ADMIN MODAL: Add Student ═══ -->
+  <div class="modal-overlay" id="modal-add-student" style="display:none">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="card-title">🆕 Thêm Học Viên Mới</span>
+        <button class="modal-close" onclick="document.getElementById('modal-add-student').style.display='none'">&times;</button>
+      </div>
+      <form id="form-add-student">
+        <div class="form-grid">
+          <div class="input-group">
+            <label>Họ và tên *</label>
+            <input type="text" id="as-name" required placeholder="Nguyễn Văn A">
+          </div>
+          <div class="input-group">
+            <label>SĐT *</label>
+            <input type="tel" id="as-phone" required placeholder="0901234567">
+          </div>
+          <div class="input-group">
+            <label>Email</label>
+            <input type="email" id="as-email" placeholder="email@gmail.com">
+          </div>
+          <div class="input-group">
+            <label>CCCD</label>
+            <input type="text" id="as-cccd" placeholder="012345678901">
+          </div>
+          <div class="input-group">
+            <label>Khóa học *</label>
+            <select id="as-course"></select>
+          </div>
+          <div class="input-group">
+            <label>Mã giới thiệu (nếu có)</label>
+            <input type="text" id="as-ref" placeholder="VD: REF-AN7X3">
+          </div>
+        </div>
+        <button type="submit" class="login-btn" style="margin-top:16px;width:100%">
+          <span id="as-btn-text">➕ Thêm Học Viên</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══ ADMIN MODAL: Add History ═══ -->
+  <div class="modal-overlay" id="modal-add-history" style="display:none">
+    <div class="modal-card">
+      <div class="modal-header">
+        <span class="card-title">📝 Thêm Nhật Ký Học Tập</span>
+        <button class="modal-close" onclick="document.getElementById('modal-add-history').style.display='none'">&times;</button>
+      </div>
+      <form id="form-add-history">
+        <div class="form-grid">
+          <div class="input-group">
+            <label>Học viên *</label>
+            <select id="ah-student"></select>
+          </div>
+          <div class="input-group">
+            <label>Ngày học</label>
+            <input type="date" id="ah-date">
+          </div>
+          <div class="input-group">
+            <label>Khóa học</label>
+            <input type="text" id="ah-course" placeholder="VD: TOEIC-450">
+          </div>
+          <div class="input-group">
+            <label>Bài học *</label>
+            <input type="text" id="ah-lesson" required placeholder="VD: Listening Part 1">
+          </div>
+          <div class="input-group">
+            <label>Điểm danh</label>
+            <select id="ah-attendance">
+              <option value="CoMat">✅ Có mặt</option>
+              <option value="Vang">❌ Vắng</option>
+              <option value="PhepVang">⚠️ Vắng phép</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Điểm</label>
+            <input type="number" id="ah-score" placeholder="0-100" min="0" max="100">
+          </div>
+          <div class="input-group" style="grid-column: 1 / -1">
+            <label>Ghi chú</label>
+            <input type="text" id="ah-note" placeholder="Ghi chú (tùy chọn)">
+          </div>
+        </div>
+        <button type="submit" class="login-btn" style="margin-top:16px;width:100%">
+          <span id="ah-btn-text">➕ Thêm Nhật Ký</span>
+        </button>
+      </form>
+    </div>
   </div>
 
   <script src="js/api.js"></script>

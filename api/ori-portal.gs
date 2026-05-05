@@ -66,6 +66,19 @@ function doPost(e) {
       case 'register':
         return createCorsOutput(handleRegister(body));
       
+      // ── Admin Actions ──
+      case 'admin_list_students':
+        return createCorsOutput(adminListStudents());
+      
+      case 'admin_add_student':
+        return createCorsOutput(handleRegister(body));
+      
+      case 'admin_add_history':
+        return createCorsOutput(adminAddHistoryAPI(body));
+      
+      case 'admin_update_commission':
+        return createCorsOutput(adminUpdateCommission(body));
+      
       default:
         return createCorsOutput({ ok: false, error: 'Unknown action' });
     }
@@ -95,6 +108,7 @@ function handleLogin(hoTen, sdt) {
   const iHoTen = headers.indexOf('HoTen');
   const iSDT   = headers.indexOf('SDT');
   const iMaHV  = headers.indexOf('MaHV');
+  const iTrangThai = headers.indexOf('TrangThai');
   
   if (iHoTen === -1 || iSDT === -1) {
     return { ok: false, error: 'Cấu trúc sheet không đúng.' };
@@ -113,6 +127,11 @@ function handleLogin(hoTen, sdt) {
       headers.forEach((h, idx) => {
         if (h) profile[h] = rows[i][idx];
       });
+      
+      // Thêm role cho admin
+      if (profile.TrangThai === 'Admin') {
+        profile.role = 'admin';
+      }
       
       // Format dates
       if (profile.NgayVaoHoc instanceof Date) {
@@ -541,6 +560,115 @@ function setupSheets() {
   }
   
   Logger.log('✅ Tất cả sheets đã được tạo thành công!');
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║       ADMIN API — Gọi từ Dashboard Web                  ║
+// ╚══════════════════════════════════════════════════════════╝
+
+/**
+ * Tạo tài khoản Admin — Chạy 1 lần duy nhất
+ */
+function createAdminAccount() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName(SH.HOC_VIEN);
+  const rows = sh.getDataRange().getValues();
+  const headers = rows[0];
+  const iHoTen = headers.indexOf('HoTen');
+  
+  // Check nếu Admin đã tồn tại
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][iHoTen]).trim().toLowerCase() === 'admin') {
+      Logger.log('⚠️ Tài khoản Admin đã tồn tại.');
+      return;
+    }
+  }
+  
+  const maHV = 'ADMIN-001';
+  const newRow = [];
+  headers.forEach(h => {
+    switch (h) {
+      case 'MaHV':          newRow.push(maHV); break;
+      case 'HoTen':         newRow.push('Admin'); break;
+      case 'SDT':           newRow.push('010813'); break;
+      case 'CCCD':          newRow.push(''); break;
+      case 'Email':         newRow.push('admin@ori.academy'); break;
+      case 'NgayVaoHoc':    newRow.push(new Date()); break;
+      case 'KhoaHoc':       newRow.push('ALL'); break;
+      case 'MaGioiThieu':   newRow.push('REF-ADMIN'); break;
+      case 'GioiThieuBoi':  newRow.push(''); break;
+      case 'TrangThai':     newRow.push('Admin'); break;
+      case 'NgayTao':       newRow.push(new Date()); break;
+      default:              newRow.push('');
+    }
+  });
+  sh.appendRow(newRow);
+  Logger.log('✅ Tài khoản Admin đã được tạo thành công!');
+  Logger.log('   Đăng nhập: Họ tên = Admin | Mật khẩu = 010813');
+}
+
+/** Danh sách tất cả học viên */
+function adminListStudents() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName(SH.HOC_VIEN);
+  const rows = sh.getDataRange().getValues();
+  const headers = rows[0];
+  
+  const students = [];
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][headers.indexOf('TrangThai')]).trim() === 'Admin') continue;
+    const entry = {};
+    headers.forEach((h, idx) => {
+      if (h) {
+        let val = rows[i][idx];
+        if (val instanceof Date) {
+          val = Utilities.formatDate(val, 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy');
+        }
+        entry[h] = val;
+      }
+    });
+    students.push(entry);
+  }
+  return { ok: true, data: students };
+}
+
+/** Thêm nhật ký học tập qua API */
+function adminAddHistoryAPI(body) {
+  const { maHV, ngay, khoaHoc, baiHoc, diemDanh, ghiChu, diem } = body;
+  if (!maHV || !baiHoc) {
+    return { ok: false, error: 'Thiếu mã HV hoặc bài học.' };
+  }
+  
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName(SH.LICH_SU);
+  if (!sh) return { ok: false, error: 'Sheet LichSuHoc không tồn tại.' };
+  
+  const date = ngay ? new Date(ngay) : new Date();
+  sh.appendRow([maHV, date, khoaHoc || '', baiHoc, diemDanh || 'CoMat', ghiChu || '', Number(diem) || 0]);
+  
+  return { ok: true, message: 'Đã thêm nhật ký cho ' + maHV };
+}
+
+/** Cập nhật trạng thái hoa hồng */
+function adminUpdateCommission(body) {
+  const { rowIndex, status } = body;
+  if (!rowIndex) return { ok: false, error: 'Thiếu vị trí dòng.' };
+  
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName(SH.GIOI_THIEU);
+  if (!sh) return { ok: false, error: 'Sheet GioiThieu không tồn tại.' };
+  
+  const headers = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0];
+  const iTrangThai = headers.indexOf('TrangThaiHH');
+  const iNgayTT    = headers.indexOf('NgayThanhToan');
+  
+  const newStatus = status || 'DaThanhToan';
+  sh.getRange(rowIndex + 1, iTrangThai + 1).setValue(newStatus);
+  if (newStatus === 'DaThanhToan') {
+    sh.getRange(rowIndex + 1, iNgayTT + 1).setValue(new Date());
+  }
+  
+  return { ok: true, message: 'Đã cập nhật trạng thái hoa hồng.' };
 }
 
 // ╔══════════════════════════════════════════════════════════╗

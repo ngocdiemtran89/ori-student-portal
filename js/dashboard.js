@@ -15,6 +15,14 @@ const Dashboard = (() => {
     setupLogout();
     setupMobileMenu();
 
+    // Show admin nav if admin role
+    const user = Auth.get();
+    if (user && user.role === 'admin') {
+      const adminNav = document.getElementById('admin-nav');
+      if (adminNav) adminNav.style.display = 'block';
+      setupAdminForms();
+    }
+
     // Load overview tab by default
     switchTab('overview');
   }
@@ -35,6 +43,7 @@ const Dashboard = (() => {
         'HocThu': '🟢 Học thử',
         'ChinhThuc': '🟣 Chính thức',
         'DaTotNghiep': '🎓 Tốt nghiệp',
+        'Admin': '🔐 Quản trị viên',
       };
       statusEl.textContent = statusMap[user.TrangThai] || user.TrangThai || '';
     }
@@ -85,6 +94,7 @@ const Dashboard = (() => {
       courses: 'Gói Khóa Học',
       profile: 'Thông Tin Cá Nhân',
       guide: 'Hướng Dẫn Sử Dụng',
+      admin: '🔐 Bảng Điều Khiển Admin',
     };
     const titleEl = document.getElementById('page-title');
     if (titleEl) titleEl.textContent = titles[tab] || '';
@@ -115,6 +125,7 @@ const Dashboard = (() => {
         loadCommission(maHV);
         break;
       case 'policy':
+      case 'guide':
         // Static content, no API needed
         break;
       case 'courses':
@@ -122,6 +133,9 @@ const Dashboard = (() => {
         break;
       case 'profile':
         loadProfile(maHV);
+        break;
+      case 'admin':
+        loadAdmin();
         break;
     }
   }
@@ -426,6 +440,148 @@ const Dashboard = (() => {
       'DaTotNghiep': '🎓 Đã tốt nghiệp',
     };
     return map[status] || status || '—';
+  }
+
+  // ── Admin Panel ──
+  async function loadAdmin() {
+    const result = await API.adminListStudents();
+    if (!result.ok) return;
+
+    const students = result.data;
+    const total = students.length;
+    const active = students.filter(s => s.TrangThai === 'ChinhThuc').length;
+    const trial = students.filter(s => s.TrangThai === 'HocThu').length;
+
+    setTextContent('admin-total-students', total);
+    setTextContent('admin-active-students', active);
+    setTextContent('admin-trial-students', trial);
+    setTextContent('admin-student-count', `${total} học viên`);
+
+    const tbody = document.getElementById('admin-students-tbody');
+    if (!tbody) return;
+
+    if (students.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted" style="padding:40px">👥 Chưa có học viên</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = students.map(s => {
+      const statusBadge = {
+        'HocThu': '<span class="badge badge-info">🟢 Học thử</span>',
+        'ChinhThuc': '<span class="badge badge-success">🟣 Chính thức</span>',
+        'DaTotNghiep': '<span class="badge badge-warning">🎓 Tốt nghiệp</span>',
+      };
+      return `
+        <tr>
+          <td class="font-semibold text-accent">${s.MaHV || '—'}</td>
+          <td>
+            <div class="flex items-center gap-sm">
+              <div class="avatar avatar-sm" style="background:${getAvatarColor(s.HoTen)}">${(s.HoTen || 'U').charAt(0)}</div>
+              <span class="font-semibold">${s.HoTen || '—'}</span>
+            </div>
+          </td>
+          <td>${s.SDT || '—'}</td>
+          <td>${s.KhoaHoc || '—'}</td>
+          <td><code style="color:var(--text-accent); background:var(--bg-input); padding:2px 6px; border-radius:4px;">${s.MaGioiThieu || '—'}</code></td>
+          <td>${statusBadge[s.TrangThai] || s.TrangThai || '—'}</td>
+          <td class="text-sm text-muted">${s.NgayVaoHoc || '—'}</td>
+        </tr>
+      `;
+    }).join('');
+
+    // Populate dropdowns for forms
+    populateAdminDropdowns(students);
+  }
+
+  function populateAdminDropdowns(students) {
+    // Student dropdown for history form
+    const ahStudent = document.getElementById('ah-student');
+    if (ahStudent && ahStudent.options.length <= 1) {
+      ahStudent.innerHTML = students.map(s =>
+        `<option value="${s.MaHV}" data-course="${s.KhoaHoc}">${s.HoTen} (${s.MaHV})</option>`
+      ).join('');
+    }
+
+    // Course dropdown for add student form
+    const asCourse = document.getElementById('as-course');
+    if (asCourse && asCourse.options.length <= 1) {
+      API.getCourses().then(result => {
+        const courses = Array.isArray(result) ? result : (result.data || []);
+        asCourse.innerHTML = courses.map(c =>
+          `<option value="${c.MaKH}">${c.Icon || ''} ${c.TenKhoaHoc} — ${formatMoney(c.GiaGoc)}</option>`
+        ).join('');
+      });
+    }
+  }
+
+  function setupAdminForms() {
+    // Form: Add Student
+    const formStudent = document.getElementById('form-add-student');
+    if (formStudent) {
+      formStudent.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btnText = document.getElementById('as-btn-text');
+        btnText.innerHTML = '<div class="spinner"></div> Đang thêm...';
+
+        const result = await API.adminAddStudent({
+          hoTen: document.getElementById('as-name').value.trim(),
+          sdt: document.getElementById('as-phone').value.trim(),
+          email: document.getElementById('as-email').value.trim(),
+          cccd: document.getElementById('as-cccd').value.trim(),
+          khoaHoc: document.getElementById('as-course').value,
+          refCode: document.getElementById('as-ref').value.trim(),
+        });
+
+        if (result.ok) {
+          showToast(`✅ ${result.data.message}\nMã HV: ${result.data.maHV}`, 'success');
+          document.getElementById('modal-add-student').style.display = 'none';
+          formStudent.reset();
+          loadAdmin();
+        } else {
+          showToast('❌ ' + (result.error || 'Lỗi'), 'error');
+        }
+        btnText.textContent = '➕ Thêm Học Viên';
+      });
+    }
+
+    // Form: Add History
+    const formHistory = document.getElementById('form-add-history');
+    if (formHistory) {
+      formHistory.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btnText = document.getElementById('ah-btn-text');
+        btnText.innerHTML = '<div class="spinner"></div> Đang thêm...';
+
+        const studentSelect = document.getElementById('ah-student');
+        const selectedOption = studentSelect.options[studentSelect.selectedIndex];
+
+        const result = await API.adminAddHistory({
+          maHV: studentSelect.value,
+          ngay: document.getElementById('ah-date').value || null,
+          khoaHoc: document.getElementById('ah-course').value || selectedOption?.dataset?.course || '',
+          baiHoc: document.getElementById('ah-lesson').value.trim(),
+          diemDanh: document.getElementById('ah-attendance').value,
+          diem: document.getElementById('ah-score').value || 0,
+          ghiChu: document.getElementById('ah-note').value.trim(),
+        });
+
+        if (result.ok) {
+          showToast('✅ ' + result.message, 'success');
+          document.getElementById('modal-add-history').style.display = 'none';
+          formHistory.reset();
+        } else {
+          showToast('❌ ' + (result.error || 'Lỗi'), 'error');
+        }
+        btnText.textContent = '➕ Thêm Nhật Ký';
+      });
+    }
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(modal => {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) modal.style.display = 'none';
+      });
+    });
   }
 
   function formatMoney(n) {

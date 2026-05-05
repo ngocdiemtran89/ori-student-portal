@@ -68,5 +68,19 @@ const API = (() => {
     test() {
       return request('GET', { action: 'test' });
     },
+
+    // ── Admin ──
+    adminListStudents() {
+      return request('POST', { action: 'admin_list_students' });
+    },
+    adminAddStudent(data) {
+      return request('POST', { action: 'admin_add_student', ...data });
+    },
+    adminAddHistory(data) {
+      return request('POST', { action: 'admin_add_history', ...data });
+    },
+    adminUpdateCommission(rowIndex, status) {
+      return request('POST', { action: 'admin_update_commission', rowIndex, status });
+    },
   };
 })();
