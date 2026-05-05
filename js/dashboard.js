@@ -22,6 +22,18 @@ const Dashboard = (() => {
       if (adminNav) adminNav.style.display = 'block';
       setupAdminForms();
       
+      // Thêm tab Analytics vào sidebar nếu chưa có
+      const analyticsNav = document.querySelector('[data-tab="analytics"]');
+      if (!analyticsNav && adminNav) {
+        const navItem = document.createElement('div');
+        navItem.className = 'nav-item';
+        navItem.dataset.tab = 'analytics';
+        navItem.innerHTML = '<span class="nav-icon">📈</span> Thống Kê';
+        adminNav.appendChild(navItem);
+      }
+      
+      setupNavigation(); // Gọi lại để đăng ký click cho nav item mới
+
       // Hỏi secret nếu chưa có
       if (!API.getSecret()) {
         const s = prompt('🔐 Nhập mã bảo mật Admin (hỏi quản trị viên):');
