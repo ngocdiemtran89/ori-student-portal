@@ -20,9 +20,19 @@ function createCorsOutput(data) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ── GET Handler ──
+// ── GET Handler (xử lý cả GET và POST qua param payload) ──
 function doGet(e) {
   const action = (e.parameter.action || '').toLowerCase();
+  
+  // Parse payload nếu có (dành cho login, register, admin actions)
+  let body = {};
+  if (e.parameter.payload) {
+    try {
+      body = JSON.parse(decodeURIComponent(e.parameter.payload));
+    } catch(err) {
+      body = {};
+    }
+  }
   
   try {
     switch (action) {
@@ -43,6 +53,23 @@ function doGet(e) {
       
       case 'leaderboard':
         return createCorsOutput({ ok: true, data: getLeaderboard() });
+      
+      // ── Actions cần payload (login, register, admin) ──
+      case 'login':
+        return createCorsOutput(handleLogin(body.hoTen, body.sdt));
+      
+      case 'register':
+      case 'admin_add_student':
+        return createCorsOutput(handleRegister(body));
+      
+      case 'admin_list_students':
+        return createCorsOutput(adminListStudents());
+      
+      case 'admin_add_history':
+        return createCorsOutput(adminAddHistoryAPI(body));
+      
+      case 'admin_update_commission':
+        return createCorsOutput(adminUpdateCommission(body));
       
       default:
         return createCorsOutput({ ok: true, msg: 'ORI Student Portal API' });

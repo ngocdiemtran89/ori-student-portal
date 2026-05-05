@@ -9,22 +9,19 @@ const API = (() => {
 
   async function request(method, params = {}) {
     try {
-      let url, options;
+      let url;
 
       if (method === 'POST') {
-        url = BASE_URL;
-        options = {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify(params),
-        };
+        // Google Apps Script redirect POST→GET gây lỗi
+        // Giải pháp: gửi qua GET với param 'payload'
+        const payload = encodeURIComponent(JSON.stringify(params));
+        url = `${BASE_URL}?action=${params.action || ''}&payload=${payload}`;
       } else {
         const query = new URLSearchParams(params).toString();
         url = `${BASE_URL}?${query}`;
-        options = { method: 'GET' };
       }
 
-      const resp = await fetch(url, options);
+      const resp = await fetch(url, { method: 'GET', redirect: 'follow' });
       const data = await resp.json();
       return data;
     } catch (err) {
