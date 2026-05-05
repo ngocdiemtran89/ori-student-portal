@@ -5,7 +5,7 @@
 
 const API = (() => {
   // ⚠️ THAY ĐỔI SAU KHI DEPLOY APPS SCRIPT
-  const BASE_URL = 'https://script.google.com/macros/s/AKfycbws9nRG_07GYKA5msOjcH_Q6eXy-NoTnrQBkVTeStuThlirtNDQy2WyZS1WuGoW6Qfr/exec';
+  const BASE_URL = 'https://script.google.com/macros/s/AKfycby8OOZckJmww3Svp6GY3LhW0PYKhzfpED1DGiaoirufiep-HeRPwdJVxLbBO-9Doh2F/exec';
 
   async function request(method, params = {}) {
     try {
