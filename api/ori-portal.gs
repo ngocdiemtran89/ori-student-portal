@@ -542,3 +542,115 @@ function setupSheets() {
   
   Logger.log('✅ Tất cả sheets đã được tạo thành công!');
 }
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║       ADMIN TOOLS — Chạy từ Apps Script Editor          ║
+// ╚══════════════════════════════════════════════════════════╝
+
+/**
+ * 🆕 THÊM HỌC VIÊN MỚI
+ * Cách dùng: Sửa thông tin bên dưới → Chọn hàm này → Bấm Run
+ * Hệ thống sẽ tự động:
+ *   - Sinh mã HV (ORI-0004, 0005...)
+ *   - Sinh mã giới thiệu (REF-XXXXX)
+ *   - Tính giảm giá 5% nếu có mã giới thiệu
+ *   - Ghi hoa hồng 10% cho người giới thiệu
+ */
+function adminAddStudent() {
+  // ═══ SỬA THÔNG TIN Ở ĐÂY ═══
+  const hoTen      = 'Trần Ngọc Diễm';     // Họ và tên
+  const sdt        = '0906303373';           // Số điện thoại
+  const cccd       = '';                     // CCCD (tùy chọn)
+  const email      = '';                     // Email (tùy chọn)
+  const khoaHoc    = 'KH03';                // Mã khóa học (KH01, KH02,... PV01,...)
+  const trangThai  = 'HocThu';              // HocThu hoặc ChinhThuc
+  const refCode    = '';                     // Mã giới thiệu của người GT (VD: REF-AN7X3), để trống nếu không có
+  // ═══════════════════════════════
+
+  const result = handleRegister({ hoTen, sdt, cccd, email, khoaHoc, refCode });
+  
+  if (result.ok) {
+    Logger.log('✅ ' + result.data.message);
+    Logger.log('   Mã HV: ' + result.data.maHV);
+    Logger.log('   Mã giới thiệu: ' + result.data.maGioiThieu);
+    if (result.data.giamGia > 0) {
+      Logger.log('   Giảm giá: ' + formatMoney(result.data.giamGia));
+    }
+  } else {
+    Logger.log('❌ Lỗi: ' + result.error);
+  }
+}
+
+/**
+ * 📝 THÊM NHẬT KÝ HỌC TẬP
+ * Cách dùng: Sửa thông tin bên dưới → Chọn hàm này → Bấm Run
+ */
+function adminAddHistory() {
+  // ═══ SỬA THÔNG TIN Ở ĐÂY ═══
+  const maHV     = 'ORI-0001';              // Mã học viên
+  const ngay     = new Date();               // Ngày học (để new Date() = hôm nay)
+  const khoaHoc  = 'TOEIC-450';             // Tên khóa học
+  const baiHoc   = 'Listening Part 3';      // Tên bài học
+  const diemDanh = 'CoMat';                 // CoMat / Vang / PhepVang
+  const ghiChu   = 'Làm bài tốt';          // Ghi chú
+  const diem     = 85;                       // Điểm (để 0 nếu không có)
+  // ═══════════════════════════════
+
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName(SH.LICH_SU);
+  
+  if (!sh) {
+    Logger.log('❌ Sheet LichSuHoc không tồn tại. Chạy setupSheets() trước.');
+    return;
+  }
+  
+  sh.appendRow([maHV, ngay, khoaHoc, baiHoc, diemDanh, ghiChu, diem]);
+  Logger.log('✅ Đã thêm nhật ký học tập cho ' + maHV + ': ' + baiHoc);
+}
+
+/**
+ * 📝 THÊM NHIỀU NHẬT KÝ CÙNG LÚC
+ * Cách dùng: Sửa danh sách bên dưới → Chọn hàm này → Bấm Run
+ */
+function adminAddMultipleHistory() {
+  // ═══ SỬA DANH SÁCH Ở ĐÂY ═══
+  const entries = [
+    // [MaHV, Ngày, Khóa học, Bài học, Điểm danh, Ghi chú, Điểm]
+    ['ORI-0001', new Date(), 'TOEIC-450', 'Reading Part 6', 'CoMat', 'Tốt', 80],
+    ['ORI-0001', new Date(), 'TOEIC-450', 'Listening Part 4', 'CoMat', 'Cần luyện thêm', 72],
+  ];
+  // ═══════════════════════════════
+
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName(SH.LICH_SU);
+  
+  entries.forEach(row => {
+    sh.appendRow(row);
+  });
+  
+  Logger.log('✅ Đã thêm ' + entries.length + ' nhật ký học tập.');
+}
+
+/**
+ * 🔑 TỰ ĐỘNG SINH MÃ GIỚI THIỆU
+ * Cho những học viên chưa có mã giới thiệu trong sheet HocVien
+ */
+function autoFillRefCodes() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName(SH.HOC_VIEN);
+  const rows = sh.getDataRange().getValues();
+  const headers = rows[0];
+  const iMaGT = headers.indexOf('MaGioiThieu');
+  
+  let count = 0;
+  for (let i = 1; i < rows.length; i++) {
+    if (!rows[i][iMaGT] || String(rows[i][iMaGT]).trim() === '') {
+      const newCode = 'REF-' + generateCode(5);
+      sh.getRange(i + 1, iMaGT + 1).setValue(newCode);
+      count++;
+      Logger.log('  → ' + rows[i][headers.indexOf('HoTen')] + ': ' + newCode);
+    }
+  }
+  
+  Logger.log('✅ Đã sinh mã giới thiệu cho ' + count + ' học viên.');
+}

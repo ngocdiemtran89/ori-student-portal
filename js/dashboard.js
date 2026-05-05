@@ -84,6 +84,7 @@ const Dashboard = (() => {
       policy: 'Chính Sách Chia Sẻ',
       courses: 'Gói Khóa Học',
       profile: 'Thông Tin Cá Nhân',
+      guide: 'Hướng Dẫn Sử Dụng',
     };
     const titleEl = document.getElementById('page-title');
     if (titleEl) titleEl.textContent = titles[tab] || '';
