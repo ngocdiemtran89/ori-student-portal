@@ -1,4 +1,4 @@
-const CACHE_NAME = 'ori-portal-v1';
+const CACHE_NAME = 'ori-portal-v2';
 const STATIC_CACHE = ['/', '/index.html', '/dashboard.html', '/register.html', '/js/api.js', '/js/auth.js', '/js/dashboard.js', '/styles/main.css', '/styles/login.css', '/styles/dashboard.css', '/manifest.json'];
 
 self.addEventListener('install', event => {
