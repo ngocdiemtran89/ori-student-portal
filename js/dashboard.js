@@ -21,6 +21,12 @@ const Dashboard = (() => {
       const adminNav = document.getElementById('admin-nav');
       if (adminNav) adminNav.style.display = 'block';
       setupAdminForms();
+      
+      // Hỏi secret nếu chưa có
+      if (!API.getSecret()) {
+        const s = prompt('🔐 Nhập mã bảo mật Admin (hỏi quản trị viên):');
+        if (s) API.setSecret(s.trim());
+      }
     }
 
     // Load overview tab by default

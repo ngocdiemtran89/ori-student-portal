@@ -66,18 +66,31 @@ const API = (() => {
       return request('GET', { action: 'test' });
     },
 
-    // ── Admin ──
+    // ── Public ──
+    lookupRef(refCode) {
+      return request('GET', { action: 'lookup_ref', ref: refCode });
+    },
+
+    // ── Admin (protected by secret) ──
     adminListStudents() {
-      return request('POST', { action: 'admin_list_students' });
+      return request('POST', { action: 'admin_list_students', secret: API.getSecret() });
     },
     adminAddStudent(data) {
-      return request('POST', { action: 'admin_add_student', ...data });
+      return request('POST', { action: 'admin_add_student', secret: API.getSecret(), ...data });
     },
     adminAddHistory(data) {
-      return request('POST', { action: 'admin_add_history', ...data });
+      return request('POST', { action: 'admin_add_history', secret: API.getSecret(), ...data });
     },
     adminUpdateCommission(rowIndex, status) {
-      return request('POST', { action: 'admin_update_commission', rowIndex, status });
+      return request('POST', { action: 'admin_update_commission', secret: API.getSecret(), rowIndex, status });
+    },
+
+    // Secret management
+    getSecret() {
+      return localStorage.getItem('ori_admin_secret') || '';
+    },
+    setSecret(s) {
+      localStorage.setItem('ori_admin_secret', s);
     },
   };
 })();

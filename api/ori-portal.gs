@@ -13,6 +13,17 @@ const SH = {
   KHOA_HOC   : 'KhoaHoc',
 };
 
+// ── BẢO MẬT: Lấy API_SECRET từ Script Properties ──
+function getApiSecret() {
+  return PropertiesService.getScriptProperties().getProperty('API_SECRET') || '';
+}
+
+function checkAdminSecret(secret) {
+  const stored = getApiSecret();
+  if (!stored) return true; // Chưa cài đặt secret → cho qua (dev mode)
+  return secret === stored;
+}
+
 // ── CORS Headers ──
 function createCorsOutput(data) {
   return ContentService
@@ -37,7 +48,7 @@ function doGet(e) {
   try {
     switch (action) {
       case 'test':
-        return createCorsOutput({ ok: true, msg: 'ORI Portal API v1.0 ✅' });
+        return createCorsOutput({ ok: true, msg: 'ORI Portal API v3.0 ✅ (Secured)' });
       
       case 'courses':
         return createCorsOutput({ ok: true, data: getCourses() });
@@ -54,22 +65,29 @@ function doGet(e) {
       case 'leaderboard':
         return createCorsOutput({ ok: true, data: getLeaderboard() });
       
-      // ── Actions cần payload (login, register, admin) ──
+      // ── Public actions ──
       case 'login':
         return createCorsOutput(handleLogin(body.hoTen, body.sdt));
       
       case 'register':
-      case 'admin_add_student':
         return createCorsOutput(handleRegister(body));
       
+      case 'lookup_ref':
+        return createCorsOutput(lookupRefCode(e.parameter.ref || body.ref));
+      
+      // ── Admin actions (đòi hỏi secret) ──
+      case 'admin_add_student':
       case 'admin_list_students':
-        return createCorsOutput(adminListStudents());
-      
       case 'admin_add_history':
-        return createCorsOutput(adminAddHistoryAPI(body));
-      
-      case 'admin_update_commission':
-        return createCorsOutput(adminUpdateCommission(body));
+      case 'admin_update_commission': {
+        if (!checkAdminSecret(body.secret)) {
+          return createCorsOutput({ ok: false, error: 'Không có quyền truy cập.' });
+        }
+        if (action === 'admin_list_students') return createCorsOutput(adminListStudents());
+        if (action === 'admin_add_student') return createCorsOutput(handleRegister(body));
+        if (action === 'admin_add_history') return createCorsOutput(adminAddHistoryAPI(body));
+        if (action === 'admin_update_commission') return createCorsOutput(adminUpdateCommission(body));
+      }
       
       default:
         return createCorsOutput({ ok: true, msg: 'ORI Student Portal API' });
@@ -813,4 +831,99 @@ function autoFillRefCodes() {
   }
   
   Logger.log('✅ Đã sinh mã giới thiệu cho ' + count + ' học viên.');
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║       PUBLIC: Tra cứu mã giới thiệu                    ║
+// ╚══════════════════════════════════════════════════════════╝
+
+/**
+ * Tra cứu mã giới thiệu → trả tên người giới thiệu
+ * Dùng cho form đăng ký public
+ */
+function lookupRefCode(refCode) {
+  if (!refCode) return { ok: false, error: 'Thiếu mã giới thiệu.' };
+  
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName(SH.HOC_VIEN);
+  const rows = sh.getDataRange().getValues();
+  const headers = rows[0];
+  const iMaGT = headers.indexOf('MaGioiThieu');
+  const iHoTen = headers.indexOf('HoTen');
+  
+  const code = String(refCode).trim().toUpperCase();
+  
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][iMaGT]).trim().toUpperCase() === code) {
+      return { 
+        ok: true, 
+        data: { 
+          nguoiGioiThieu: rows[i][iHoTen],
+          refCode: rows[i][iMaGT],
+          giamGia: '5%'
+        }
+      };
+    }
+  }
+  
+  return { ok: false, error: 'Mã giới thiệu không tồn tại.' };
+}
+
+// ╔══════════════════════════════════════════════════════════╗
+// ║       BACKUP: Sao lưu tự động hàng tuần                ║
+// ╚══════════════════════════════════════════════════════════╝
+
+/**
+ * Sao lưu tất cả sheet sang file backup
+ * Cài đặt: Project Settings → Script Properties → BACKUP_ID = ID của Sheets backup
+ * Trigger: Triggers → weeklyBackup → Week timer → Monday 7-8am
+ */
+function weeklyBackup() {
+  const backupId = PropertiesService.getScriptProperties().getProperty('BACKUP_ID');
+  if (!backupId) {
+    Logger.log('⚠️ Chưa cài đặt BACKUP_ID trong Script Properties.');
+    return;
+  }
+  
+  const source = SpreadsheetApp.openById(SHEET_ID);
+  const backup = SpreadsheetApp.openById(backupId);
+  const timestamp = Utilities.formatDate(new Date(), 'Asia/Ho_Chi_Minh', 'dd/MM/yyyy HH:mm');
+  
+  // Xóa các sheet backup cũ (giữ sheet đầu tiên)
+  const existingSheets = backup.getSheets();
+  for (let i = existingSheets.length - 1; i > 0; i--) {
+    backup.deleteSheet(existingSheets[i]);
+  }
+  
+  // Copy từng sheet
+  const sheetNames = Object.values(SH);
+  sheetNames.forEach(name => {
+    const sh = source.getSheetByName(name);
+    if (sh) {
+      const data = sh.getDataRange().getValues();
+      let target = backup.getSheetByName(name);
+      if (!target) {
+        target = backup.insertSheet(name);
+      }
+      target.clear();
+      if (data.length > 0) {
+        target.getRange(1, 1, data.length, data[0].length).setValues(data);
+      }
+      Logger.log('  ✅ Backup: ' + name + ' (' + (data.length - 1) + ' rows)');
+    }
+  });
+  
+  // Đổi tên sheet đầu tiên thành timestamp
+  const first = backup.getSheets()[0];
+  if (first.getName() !== sheetNames[0]) {
+    first.setName('_Backup_' + timestamp);
+  }
+  
+  Logger.log('🗄️ Backup hoàn thành lúc ' + timestamp);
+}
+
+/** Test backup ngay lập tức */
+function testBackupNow() {
+  Logger.log('🔄 Bắt đầu backup test...');
+  weeklyBackup();
 }
