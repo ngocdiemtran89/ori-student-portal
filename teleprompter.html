@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ORI TOEIC — Teleprompter</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #000000;
+      --text: #ffffff;
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.4);
+      --panel-bg: rgba(20, 20, 30, 0.95);
+      --border: rgba(255,255,255,0.1);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      background: var(--panel-bg);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 36px;
+      height: 36px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: white;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .brand-name {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .brand-name span {
+      color: var(--accent);
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05);
+      color: white;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .btn-icon:hover { background: rgba(255,255,255,0.1); }
+    .btn-icon.active { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+
+    /* ── TELEPROMPTER AREA ── */
+    .prompter-wrapper {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Gradient overlays for reading focus */
+    .prompter-wrapper::before,
+    .prompter-wrapper::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0;
+      height: 25%;
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .prompter-wrapper::before {
+      top: 0;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent);
+    }
+
+    .prompter-wrapper::after {
+      bottom: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+    }
+
+    /* Focus line indicator */
+    .focus-line {
+      position: absolute;
+      top: 38%;
+      left: 5%;
+      right: 5%;
+      height: 3px;
+      background: var(--accent);
+      opacity: 0.5;
+      z-index: 11;
+      border-radius: 2px;
+      box-shadow: 0 0 12px var(--accent-glow);
+      pointer-events: none;
+    }
+
+    .prompter-scroll {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      padding: 40vh 8% 80vh 8%;
+      transition: none;
+    }
+
+    .prompter-text {
+      font-weight: 600;
+      line-height: 1.7;
+      letter-spacing: 0.02em;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .prompter-text:focus {
+      outline: none;
+    }
+
+    /* Placeholder */
+    .prompter-text:empty::before {
+      content: 'Nhập nội dung script ở đây...\A\ATip: Bấm ▶ để bắt đầu chạy chữ\ABấm ⚙ để điều chỉnh tốc độ & cỡ chữ';
+      color: rgba(255,255,255,0.25);
+      white-space: pre-wrap;
+    }
+
+    /* ── CONTROL PANEL ── */
+    .controls {
+      display: none;
+      padding: 16px 20px;
+      background: var(--panel-bg);
+      border-top: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .controls.show { display: block; }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .control-row:last-child { margin-bottom: 0; }
+
+    .control-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.6);
+      min-width: 70px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .control-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      outline: none;
+    }
+
+    .control-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+    .control-value {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent);
+      min-width: 44px;
+      text-align: right;
+    }
+
+    /* ── BOTTOM BAR ── */
+    .bottom-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 20px;
+      background: var(--panel-bg);
+      border-top: 1px solid var(--border);
+      gap: 12px;
+      flex-shrink: 0;
+      z-index: 100;
+    }
+
+    .btn-play {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-size: 1.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 24px var(--accent-glow);
+      transition: all 0.25s;
+    }
+
+    .btn-play:hover {
+      transform: scale(1.08);
+      box-shadow: 0 6px 30px var(--accent-glow);
+    }
+
+    .btn-play:active { transform: scale(0.95); }
+
+    .btn-round {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.05);
+      color: white;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .btn-round:hover { background: rgba(255,255,255,0.12); }
+
+    .timer {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.5);
+      font-variant-numeric: tabular-nums;
+      min-width: 50px;
+      text-align: center;
+    }
+
+    /* ── MIRROR MODE ── */
+    body.mirror .prompter-scroll {
+      transform: scaleX(-1);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      .header { padding: 8px 12px; }
+      .brand-name { font-size: 0.85rem; }
+      .prompter-scroll { padding: 35vh 6% 70vh 6%; }
+      .controls { padding: 12px; }
+      .bottom-bar { padding: 10px 12px; }
+      .btn-play { width: 50px; height: 50px; font-size: 1.3rem; }
+      .btn-round { width: 38px; height: 38px; }
+    }
+
+    /* ── FULLSCREEN hide header ── */
+    body.fullscreen .header { display: none; }
+    body.fullscreen .controls { display: none !important; }
+    body.fullscreen .bottom-bar { 
+      position: fixed; 
+      bottom: 0; left: 0; right: 0; 
+      opacity: 0; 
+      transition: opacity 0.3s;
+    }
+    body.fullscreen .bottom-bar:hover,
+    body.fullscreen .bottom-bar.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+  <!-- HEADER -->
+  <div class="header">
+    <div class="brand">
+      <div class="brand-logo">O</div>
+      <div class="brand-name"><span>ORI</span> TOEIC</div>
+    </div>
+    <div class="header-actions">
+      <button class="btn-icon" id="btn-mirror" title="Lật gương">🪞</button>
+      <button class="btn-icon" id="btn-settings" title="Cài đặt">⚙️</button>
+      <button class="btn-icon" id="btn-fullscreen" title="Toàn màn hình">⛶</button>
+    </div>
+  </div>
+
+  <!-- SETTINGS PANEL -->
+  <div class="controls" id="controls-panel">
+    <div class="control-row">
+      <span class="control-label">Cỡ chữ</span>
+      <input type="range" class="control-slider" id="slider-size" min="20" max="80" value="36">
+      <span class="control-value" id="val-size">36px</span>
+    </div>
+    <div class="control-row">
+      <span class="control-label">Tốc độ</span>
+      <input type="range" class="control-slider" id="slider-speed" min="10" max="200" value="60">
+      <span class="control-value" id="val-speed">60</span>
+    </div>
+  </div>
+
+  <!-- PROMPTER -->
+  <div class="prompter-wrapper">
+    <div class="focus-line"></div>
+    <div class="prompter-scroll" id="prompter-scroll">
+      <div class="prompter-text" id="prompter-text" contenteditable="true" spellcheck="false"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div class="bottom-bar" id="bottom-bar">
+    <button class="btn-round" id="btn-reset" title="Quay lại đầu">⏮</button>
+    <span class="timer" id="timer">00:00</span>
+    <button class="btn-play" id="btn-play" title="Bắt đầu / Dừng">▶</button>
+    <span class="timer" id="progress">0%</span>
+    <button class="btn-round" id="btn-clear" title="Xóa nội dung">🗑️</button>
+  </div>
+
+  <script>
+    // ── Elements ──
+    const scrollEl    = document.getElementById('prompter-scroll');
+    const textEl      = document.getElementById('prompter-text');
+    const btnPlay     = document.getElementById('btn-play');
+    const btnReset    = document.getElementById('btn-reset');
+    const btnClear    = document.getElementById('btn-clear');
+    const btnSettings = document.getElementById('btn-settings');
+    const btnMirror   = document.getElementById('btn-mirror');
+    const btnFull     = document.getElementById('btn-fullscreen');
+    const controls    = document.getElementById('controls-panel');
+    const sliderSize  = document.getElementById('slider-size');
+    const sliderSpeed = document.getElementById('slider-speed');
+    const valSize     = document.getElementById('val-size');
+    const valSpeed    = document.getElementById('val-speed');
+    const timerEl     = document.getElementById('timer');
+    const progressEl  = document.getElementById('progress');
+    const bottomBar   = document.getElementById('bottom-bar');
+
+    let isPlaying = false;
+    let scrollPos = 0;
+    let speed = 60; // pixels per second
+    let animFrame = null;
+    let lastTime = null;
+    let elapsedSec = 0;
+    let timerInterval = null;
+
+    // ── Font size ──
+    sliderSize.addEventListener('input', () => {
+      const v = sliderSize.value;
+      textEl.style.fontSize = v + 'px';
+      valSize.textContent = v + 'px';
+    });
+
+    // ── Speed ──
+    sliderSpeed.addEventListener('input', () => {
+      speed = parseInt(sliderSpeed.value);
+      valSpeed.textContent = speed;
+    });
+
+    // ── Settings toggle ──
+    btnSettings.addEventListener('click', () => {
+      controls.classList.toggle('show');
+      btnSettings.classList.toggle('active');
+    });
+
+    // ── Mirror ──
+    btnMirror.addEventListener('click', () => {
+      document.body.classList.toggle('mirror');
+      btnMirror.classList.toggle('active');
+    });
+
+    // ── Fullscreen ──
+    btnFull.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+        document.body.classList.add('fullscreen');
+      } else {
+        document.exitFullscreen();
+        document.body.classList.remove('fullscreen');
+      }
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement) {
+        document.body.classList.remove('fullscreen');
+      }
+    });
+
+    // ── Show bottom bar on touch in fullscreen ──
+    let hideTimeout;
+    document.addEventListener('touchstart', () => {
+      if (document.body.classList.contains('fullscreen')) {
+        bottomBar.classList.add('visible');
+        clearTimeout(hideTimeout);
+        hideTimeout = setTimeout(() => bottomBar.classList.remove('visible'), 3000);
+      }
+    });
+
+    // ── Play / Pause ──
+    btnPlay.addEventListener('click', togglePlay);
+
+    function togglePlay() {
+      if (isPlaying) {
+        pause();
+      } else {
+        play();
+      }
+    }
+
+    function play() {
+      isPlaying = true;
+      btnPlay.textContent = '⏸';
+      textEl.contentEditable = 'false';
+      lastTime = performance.now();
+      animFrame = requestAnimationFrame(scroll);
+
+      // Timer
+      timerInterval = setInterval(() => {
+        elapsedSec++;
+        const m = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+        const s = String(elapsedSec % 60).padStart(2, '0');
+        timerEl.textContent = `${m}:${s}`;
+      }, 1000);
+    }
+
+    function pause() {
+      isPlaying = false;
+      btnPlay.textContent = '▶';
+      textEl.contentEditable = 'true';
+      cancelAnimationFrame(animFrame);
+      clearInterval(timerInterval);
+    }
+
+    function scroll(now) {
+      if (!isPlaying) return;
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+      scrollPos += speed * dt;
+
+      const maxScroll = scrollEl.scrollHeight - window.innerHeight;
+      if (scrollPos > maxScroll) scrollPos = maxScroll;
+
+      scrollEl.style.transform = `translateY(-${scrollPos}px)`;
+
+      // Progress
+      const pct = maxScroll > 0 ? Math.round((scrollPos / maxScroll) * 100) : 0;
+      progressEl.textContent = pct + '%';
+
+      if (scrollPos >= maxScroll) {
+        pause();
+        return;
+      }
+
+      animFrame = requestAnimationFrame(scroll);
+    }
+
+    // ── Reset ──
+    btnReset.addEventListener('click', () => {
+      pause();
+      scrollPos = 0;
+      scrollEl.style.transform = 'translateY(0)';
+      elapsedSec = 0;
+      timerEl.textContent = '00:00';
+      progressEl.textContent = '0%';
+    });
+
+    // ── Clear ──
+    btnClear.addEventListener('click', () => {
+      if (confirm('Xóa toàn bộ nội dung?')) {
+        textEl.textContent = '';
+        btnReset.click();
+      }
+    });
+
+    // ── Keyboard shortcuts ──
+    document.addEventListener('keydown', (e) => {
+      // Don't capture when editing text
+      if (textEl === document.activeElement && !isPlaying) return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.code === 'ArrowUp') {
+        e.preventDefault();
+        speed = Math.min(200, speed + 10);
+        sliderSpeed.value = speed;
+        valSpeed.textContent = speed;
+      } else if (e.code === 'ArrowDown') {
+        e.preventDefault();
+        speed = Math.max(10, speed - 10);
+        sliderSpeed.value = speed;
+        valSpeed.textContent = speed;
+      }
+    });
+
+    // ── Init font size ──
+    textEl.style.fontSize = sliderSize.value + 'px';
+
+    // ── Save/Restore text from localStorage ──
+    const STORAGE_KEY = 'ori-teleprompter-text';
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) textEl.textContent = saved;
+
+    textEl.addEventListener('input', () => {
+      localStorage.setItem(STORAGE_KEY, textEl.textContent);
+    });
+  </script>
+</body>
+</html>
