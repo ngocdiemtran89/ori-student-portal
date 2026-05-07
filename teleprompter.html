@@ -426,8 +426,8 @@
   <script>
     // ── State ──
     let fontSize = 36;
-    let speedLevel = 3; // 1-10
-    const speedMap = [15, 25, 40, 55, 75, 100, 130, 165, 200, 260];
+    let speedLevel = 3; // 1-13
+    const speedMap = [20, 40, 65, 90, 120, 160, 200, 250, 310, 380, 460, 550, 660];
     let isPlaying = false;
     let scrollPos = 0;
     let animFrame = null;
@@ -463,10 +463,10 @@
 
     // ── Speed controls ──
     function updateSpeed(delta) {
-      speedLevel = Math.max(1, Math.min(10, speedLevel + delta));
+      speedLevel = Math.max(1, Math.min(13, speedLevel + delta));
       speedVal.textContent = speedLevel;
       tbSpeedVal.textContent = speedLevel;
-      speedBar.style.width = ((speedLevel - 1) / 9 * 100) + '%';
+      speedBar.style.width = ((speedLevel - 1) / 12 * 100) + '%';
     }
 
     document.getElementById('speed-down').addEventListener('click', () => updateSpeed(-1));
