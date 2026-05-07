@@ -5,547 +5,593 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ORI TOEIC — Teleprompter</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎓</text></svg>">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-    :root {
-      --bg: #000000;
-      --text: #ffffff;
-      --accent: #6366f1;
-      --accent-glow: rgba(99, 102, 241, 0.4);
-      --panel-bg: rgba(20, 20, 30, 0.95);
-      --border: rgba(255,255,255,0.1);
-    }
-
     body {
       font-family: 'Inter', -apple-system, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      height: 100vh;
+      background: #000;
+      color: #fff;
+      height: 100dvh;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
     }
 
-    /* ── HEADER ── */
-    .header {
+    /* ════════════════════════════════════════
+       SCREEN 1: EDIT MODE
+       ════════════════════════════════════════ */
+    .edit-screen {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+    }
+
+    .edit-screen.hidden { display: none; }
+
+    /* Top bar */
+    .topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 20px;
-      background: var(--panel-bg);
-      border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(12px);
-      z-index: 100;
-      flex-shrink: 0;
+      padding: 12px 16px;
+      background: rgba(15,15,25,0.98);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
-    }
-
-    .brand-logo {
-      width: 36px;
-      height: 36px;
-      background: var(--accent);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      font-weight: 900;
-      color: white;
-      box-shadow: 0 0 20px var(--accent-glow);
-    }
-
-    .brand-name {
-      font-size: 1rem;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-
-    .brand-name span {
-      color: var(--accent);
-    }
-
-    .header-actions {
-      display: flex;
       gap: 8px;
     }
 
-    .btn-icon {
-      width: 38px;
-      height: 38px;
+    .brand-dot {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 0.85rem;
+      box-shadow: 0 0 16px rgba(99,102,241,0.4);
+    }
+
+    .brand-text { font-weight: 700; font-size: 0.95rem; }
+    .brand-text b { color: #818cf8; }
+
+    /* Textarea */
+    .edit-area {
+      flex: 1;
+      padding: 16px;
+      overflow: hidden;
+    }
+
+    .edit-area textarea {
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.04);
+      border: 2px dashed rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 20px;
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      line-height: 1.8;
+      resize: none;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .edit-area textarea:focus {
+      border-color: rgba(99,102,241,0.5);
+    }
+
+    .edit-area textarea::placeholder {
+      color: rgba(255,255,255,0.25);
+    }
+
+    /* Controls panel */
+    .edit-controls {
+      padding: 16px;
+      background: rgba(15,15,25,0.98);
+      border-top: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .ctrl-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .ctrl-group:last-of-type { margin-bottom: 16px; }
+
+    .ctrl-icon {
+      font-size: 1.1rem;
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .ctrl-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: rgba(255,255,255,0.45);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      min-width: 48px;
+    }
+
+    .ctrl-btn {
+      width: 36px; height: 36px;
       border-radius: 10px;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.05);
-      color: white;
+      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.06);
+      color: #fff;
       font-size: 1.1rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: all 0.2s;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .btn-icon:hover { background: rgba(255,255,255,0.1); }
-    .btn-icon.active { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 14px var(--accent-glow); }
+    .ctrl-btn:active { transform: scale(0.9); background: rgba(99,102,241,0.3); }
 
-    /* ── TELEPROMPTER AREA ── */
-    .prompter-wrapper {
+    .ctrl-display {
       flex: 1;
-      position: relative;
-      overflow: hidden;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #818cf8;
+      font-variant-numeric: tabular-nums;
     }
 
-    /* Gradient overlays for reading focus */
-    .prompter-wrapper::before,
-    .prompter-wrapper::after {
-      content: '';
+    .ctrl-bar {
+      flex: 1;
+      height: 8px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .ctrl-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #6366f1, #a78bfa);
+      border-radius: 4px;
+      transition: width 0.15s;
+    }
+
+    /* Start button */
+    .btn-start {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      font-family: 'Inter', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 20px rgba(99,102,241,0.4);
+      transition: all 0.2s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-start:active { transform: scale(0.97); }
+    .btn-start:disabled { opacity: 0.4; cursor: default; }
+
+    .word-count {
+      text-align: center;
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.3);
+      margin-top: 10px;
+    }
+
+    /* ════════════════════════════════════════
+       SCREEN 2: PLAY MODE
+       ════════════════════════════════════════ */
+    .play-screen {
+      display: none;
+      height: 100dvh;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .play-screen.active { display: flex; }
+
+    /* Gradient fades */
+    .fade-top, .fade-bottom {
       position: absolute;
       left: 0; right: 0;
-      height: 25%;
       z-index: 10;
       pointer-events: none;
     }
 
-    .prompter-wrapper::before {
+    .fade-top {
       top: 0;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent);
+      height: 30%;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 100%);
     }
 
-    .prompter-wrapper::after {
+    .fade-bottom {
       bottom: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);
+      height: 30%;
+      background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
     }
 
-    /* Focus line indicator */
-    .focus-line {
+    /* Center reading guide */
+    .guide-line {
       position: absolute;
-      top: 38%;
-      left: 5%;
-      right: 5%;
+      top: 36%;
+      left: 4%; right: 4%;
       height: 3px;
-      background: var(--accent);
-      opacity: 0.5;
-      z-index: 11;
+      background: #6366f1;
+      opacity: 0.35;
       border-radius: 2px;
-      box-shadow: 0 0 12px var(--accent-glow);
+      z-index: 11;
       pointer-events: none;
+      box-shadow: 0 0 20px rgba(99,102,241,0.3);
     }
 
-    .prompter-scroll {
+    /* Scroll container */
+    .scroll-wrap {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .scroll-content {
       position: absolute;
-      top: 0; left: 0; right: 0;
-      padding: 40vh 8% 80vh 8%;
-      transition: none;
+      left: 0; right: 0;
+      padding: 42vh 7% 90vh 7%;
     }
 
-    .prompter-text {
+    .scroll-text {
       font-weight: 600;
-      line-height: 1.7;
-      letter-spacing: 0.02em;
+      line-height: 1.75;
+      letter-spacing: 0.015em;
       white-space: pre-wrap;
       word-break: break-word;
     }
 
-    .prompter-text:focus {
-      outline: none;
-    }
-
-    /* Placeholder */
-    .prompter-text:empty::before {
-      content: 'Nhập nội dung script ở đây...\A\ATip: Bấm ▶ để bắt đầu chạy chữ\ABấm ⚙ để điều chỉnh tốc độ & cỡ chữ';
-      color: rgba(255,255,255,0.25);
-      white-space: pre-wrap;
-    }
-
-    /* ── CONTROL PANEL ── */
-    .controls {
-      display: none;
-      padding: 16px 20px;
-      background: var(--panel-bg);
-      border-top: 1px solid var(--border);
-      backdrop-filter: blur(12px);
-      flex-shrink: 0;
-      z-index: 100;
-    }
-
-    .controls.show { display: block; }
-
-    .control-row {
+    /* Play toolbar */
+    .play-toolbar {
       display: flex;
       align-items: center;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-
-    .control-row:last-child { margin-bottom: 0; }
-
-    .control-label {
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: rgba(255,255,255,0.6);
-      min-width: 70px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .control-slider {
-      flex: 1;
-      -webkit-appearance: none;
-      appearance: none;
-      height: 6px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 3px;
-      outline: none;
-    }
-
-    .control-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      appearance: none;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      background: var(--accent);
-      cursor: pointer;
-      box-shadow: 0 0 10px var(--accent-glow);
-    }
-
-    .control-value {
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--accent);
-      min-width: 44px;
-      text-align: right;
-    }
-
-    /* ── BOTTOM BAR ── */
-    .bottom-bar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 12px 20px;
-      background: var(--panel-bg);
-      border-top: 1px solid var(--border);
-      gap: 12px;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: rgba(10,10,20,0.95);
+      border-top: 1px solid rgba(255,255,255,0.08);
+      z-index: 20;
       flex-shrink: 0;
-      z-index: 100;
+      gap: 6px;
     }
 
-    .btn-play {
-      width: 56px;
-      height: 56px;
+    .tb-btn {
+      width: 42px; height: 42px;
       border-radius: 50%;
       border: none;
-      background: var(--accent);
-      color: white;
-      font-size: 1.5rem;
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      font-size: 1.15rem;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 4px 24px var(--accent-glow);
-      transition: all 0.25s;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      flex-shrink: 0;
     }
 
-    .btn-play:hover {
-      transform: scale(1.08);
-      box-shadow: 0 6px 30px var(--accent-glow);
+    .tb-btn:active { transform: scale(0.88); }
+
+    .tb-play {
+      width: 54px; height: 54px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      font-size: 1.4rem;
+      box-shadow: 0 4px 18px rgba(99,102,241,0.4);
     }
 
-    .btn-play:active { transform: scale(0.95); }
-
-    .btn-round {
-      width: 44px;
-      height: 44px;
-      border-radius: 50%;
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,0.05);
-      color: white;
-      font-size: 1.1rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-    }
-
-    .btn-round:hover { background: rgba(255,255,255,0.12); }
-
-    .timer {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: rgba(255,255,255,0.5);
+    .tb-info {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.4);
+      text-align: center;
       font-variant-numeric: tabular-nums;
-      min-width: 50px;
+      min-width: 38px;
+    }
+
+    .tb-info b {
+      display: block;
+      color: #818cf8;
+      font-size: 0.85rem;
+    }
+
+    .tb-speed {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 4px 6px;
+    }
+
+    .tb-speed .tb-btn {
+      width: 32px; height: 32px;
+      font-size: 0.95rem;
+      background: transparent;
+    }
+
+    .tb-speed-val {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #818cf8;
+      min-width: 24px;
       text-align: center;
     }
 
-    /* ── MIRROR MODE ── */
-    body.mirror .prompter-scroll {
-      transform: scaleX(-1);
+    /* ════════════════════════════════════════
+       RESPONSIVE
+       ════════════════════════════════════════ */
+    @media (max-width: 400px) {
+      .edit-area textarea { padding: 14px; font-size: 0.95rem; }
+      .ctrl-label { min-width: 40px; font-size: 0.72rem; }
+      .scroll-content { padding: 38vh 5% 80vh 5%; }
     }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 600px) {
-      .header { padding: 8px 12px; }
-      .brand-name { font-size: 0.85rem; }
-      .prompter-scroll { padding: 35vh 6% 70vh 6%; }
-      .controls { padding: 12px; }
-      .bottom-bar { padding: 10px 12px; }
-      .btn-play { width: 50px; height: 50px; font-size: 1.3rem; }
-      .btn-round { width: 38px; height: 38px; }
-    }
-
-    /* ── FULLSCREEN hide header ── */
-    body.fullscreen .header { display: none; }
-    body.fullscreen .controls { display: none !important; }
-    body.fullscreen .bottom-bar { 
-      position: fixed; 
-      bottom: 0; left: 0; right: 0; 
-      opacity: 0; 
-      transition: opacity 0.3s;
-    }
-    body.fullscreen .bottom-bar:hover,
-    body.fullscreen .bottom-bar.visible { opacity: 1; }
   </style>
 </head>
 <body>
-  <!-- HEADER -->
-  <div class="header">
-    <div class="brand">
-      <div class="brand-logo">O</div>
-      <div class="brand-name"><span>ORI</span> TOEIC</div>
+
+  <!-- ════ SCREEN 1: EDIT ════ -->
+  <div class="edit-screen" id="screen-edit">
+    <div class="topbar">
+      <div class="brand">
+        <div class="brand-dot">O</div>
+        <div class="brand-text"><b>ORI</b> TOEIC</div>
+      </div>
+      <span style="font-size:0.75rem;color:rgba(255,255,255,0.3)">Teleprompter</span>
     </div>
-    <div class="header-actions">
-      <button class="btn-icon" id="btn-mirror" title="Lật gương">🪞</button>
-      <button class="btn-icon" id="btn-settings" title="Cài đặt">⚙️</button>
-      <button class="btn-icon" id="btn-fullscreen" title="Toàn màn hình">⛶</button>
+
+    <div class="edit-area">
+      <textarea id="input-text" placeholder="Dán nội dung script vào đây...&#10;&#10;Ví dụ:&#10;Xin chào các bạn! Hôm nay chúng ta sẽ học về TOEIC Listening Part 1..."></textarea>
+    </div>
+
+    <div class="edit-controls">
+      <!-- Font size -->
+      <div class="ctrl-group">
+        <span class="ctrl-icon">🔤</span>
+        <span class="ctrl-label">Chữ</span>
+        <button class="ctrl-btn" id="size-down">−</button>
+        <div class="ctrl-bar"><div class="ctrl-bar-fill" id="size-bar" style="width:40%"></div></div>
+        <span class="ctrl-display" id="size-val">36px</span>
+        <button class="ctrl-btn" id="size-up">+</button>
+      </div>
+
+      <!-- Speed -->
+      <div class="ctrl-group">
+        <span class="ctrl-icon">🚀</span>
+        <span class="ctrl-label">Tốc</span>
+        <button class="ctrl-btn" id="speed-down">−</button>
+        <div class="ctrl-bar"><div class="ctrl-bar-fill" id="speed-bar" style="width:30%"></div></div>
+        <span class="ctrl-display" id="speed-val">3</span>
+        <button class="ctrl-btn" id="speed-up">+</button>
+      </div>
+
+      <button class="btn-start" id="btn-start">
+        ▶️ Bắt Đầu Chạy Chữ
+      </button>
+      <div class="word-count" id="word-count">0 từ · ~0 phút đọc</div>
     </div>
   </div>
 
-  <!-- SETTINGS PANEL -->
-  <div class="controls" id="controls-panel">
-    <div class="control-row">
-      <span class="control-label">Cỡ chữ</span>
-      <input type="range" class="control-slider" id="slider-size" min="20" max="80" value="36">
-      <span class="control-value" id="val-size">36px</span>
-    </div>
-    <div class="control-row">
-      <span class="control-label">Tốc độ</span>
-      <input type="range" class="control-slider" id="slider-speed" min="10" max="200" value="60">
-      <span class="control-value" id="val-speed">60</span>
-    </div>
-  </div>
+  <!-- ════ SCREEN 2: PLAY ════ -->
+  <div class="play-screen" id="screen-play">
+    <div class="fade-top"></div>
+    <div class="fade-bottom"></div>
+    <div class="guide-line"></div>
 
-  <!-- PROMPTER -->
-  <div class="prompter-wrapper">
-    <div class="focus-line"></div>
-    <div class="prompter-scroll" id="prompter-scroll">
-      <div class="prompter-text" id="prompter-text" contenteditable="true" spellcheck="false"></div>
+    <div class="scroll-wrap">
+      <div class="scroll-content" id="scroll-content">
+        <div class="scroll-text" id="scroll-text"></div>
+      </div>
     </div>
-  </div>
 
-  <!-- BOTTOM BAR -->
-  <div class="bottom-bar" id="bottom-bar">
-    <button class="btn-round" id="btn-reset" title="Quay lại đầu">⏮</button>
-    <span class="timer" id="timer">00:00</span>
-    <button class="btn-play" id="btn-play" title="Bắt đầu / Dừng">▶</button>
-    <span class="timer" id="progress">0%</span>
-    <button class="btn-round" id="btn-clear" title="Xóa nội dung">🗑️</button>
+    <div class="play-toolbar">
+      <button class="tb-btn" id="tb-back" title="Quay lại sửa">✏️</button>
+
+      <div class="tb-info">
+        <span>⏱</span>
+        <b id="play-timer">00:00</b>
+      </div>
+
+      <button class="tb-btn tb-play" id="tb-play">▶</button>
+
+      <div class="tb-speed">
+        <button class="tb-btn" id="tb-slow">−</button>
+        <span class="tb-speed-val" id="tb-speed-val">3</span>
+        <button class="tb-btn" id="tb-fast">+</button>
+      </div>
+
+      <button class="tb-btn" id="tb-reset" title="Về đầu">⏮</button>
+    </div>
   </div>
 
   <script>
-    // ── Elements ──
-    const scrollEl    = document.getElementById('prompter-scroll');
-    const textEl      = document.getElementById('prompter-text');
-    const btnPlay     = document.getElementById('btn-play');
-    const btnReset    = document.getElementById('btn-reset');
-    const btnClear    = document.getElementById('btn-clear');
-    const btnSettings = document.getElementById('btn-settings');
-    const btnMirror   = document.getElementById('btn-mirror');
-    const btnFull     = document.getElementById('btn-fullscreen');
-    const controls    = document.getElementById('controls-panel');
-    const sliderSize  = document.getElementById('slider-size');
-    const sliderSpeed = document.getElementById('slider-speed');
-    const valSize     = document.getElementById('val-size');
-    const valSpeed    = document.getElementById('val-speed');
-    const timerEl     = document.getElementById('timer');
-    const progressEl  = document.getElementById('progress');
-    const bottomBar   = document.getElementById('bottom-bar');
-
+    // ── State ──
+    let fontSize = 36;
+    let speedLevel = 3; // 1-10
+    const speedMap = [15, 25, 40, 55, 75, 100, 130, 165, 200, 260];
     let isPlaying = false;
     let scrollPos = 0;
-    let speed = 60; // pixels per second
     let animFrame = null;
     let lastTime = null;
-    let elapsedSec = 0;
-    let timerInterval = null;
+    let elapsed = 0;
+    let timerRef = null;
 
-    // ── Font size ──
-    sliderSize.addEventListener('input', () => {
-      const v = sliderSize.value;
-      textEl.style.fontSize = v + 'px';
-      valSize.textContent = v + 'px';
+    // ── Elements ──
+    const screenEdit = document.getElementById('screen-edit');
+    const screenPlay = document.getElementById('screen-play');
+    const inputText  = document.getElementById('input-text');
+    const scrollContent = document.getElementById('scroll-content');
+    const scrollText = document.getElementById('scroll-text');
+    const sizeVal    = document.getElementById('size-val');
+    const sizeBar    = document.getElementById('size-bar');
+    const speedVal   = document.getElementById('speed-val');
+    const speedBar   = document.getElementById('speed-bar');
+    const wordCount  = document.getElementById('word-count');
+    const btnStart   = document.getElementById('btn-start');
+    const tbPlay     = document.getElementById('tb-play');
+    const tbSpeedVal = document.getElementById('tb-speed-val');
+    const playTimer  = document.getElementById('play-timer');
+
+    // ── Font size controls ──
+    function updateSize(delta) {
+      fontSize = Math.max(20, Math.min(80, fontSize + delta));
+      sizeVal.textContent = fontSize + 'px';
+      sizeBar.style.width = ((fontSize - 20) / 60 * 100) + '%';
+    }
+
+    document.getElementById('size-down').addEventListener('click', () => updateSize(-4));
+    document.getElementById('size-up').addEventListener('click', () => updateSize(4));
+
+    // ── Speed controls ──
+    function updateSpeed(delta) {
+      speedLevel = Math.max(1, Math.min(10, speedLevel + delta));
+      speedVal.textContent = speedLevel;
+      tbSpeedVal.textContent = speedLevel;
+      speedBar.style.width = ((speedLevel - 1) / 9 * 100) + '%';
+    }
+
+    document.getElementById('speed-down').addEventListener('click', () => updateSpeed(-1));
+    document.getElementById('speed-up').addEventListener('click', () => updateSpeed(1));
+    document.getElementById('tb-slow').addEventListener('click', () => updateSpeed(-1));
+    document.getElementById('tb-fast').addEventListener('click', () => updateSpeed(1));
+
+    // ── Word count ──
+    inputText.addEventListener('input', updateWordCount);
+
+    function updateWordCount() {
+      const text = inputText.value.trim();
+      const words = text ? text.split(/\s+/).length : 0;
+      const mins = Math.ceil(words / 140); // ~140 wpm reading speed
+      wordCount.textContent = `${words} từ · ~${mins} phút đọc`;
+      btnStart.disabled = words === 0;
+    }
+
+    // ── Start ──
+    btnStart.addEventListener('click', () => {
+      const text = inputText.value.trim();
+      if (!text) return;
+
+      // Save to localStorage
+      localStorage.setItem('ori-tp-text', text);
+      localStorage.setItem('ori-tp-size', fontSize);
+      localStorage.setItem('ori-tp-speed', speedLevel);
+
+      // Switch to play screen
+      scrollText.textContent = text;
+      scrollText.style.fontSize = fontSize + 'px';
+      scrollPos = 0;
+      scrollContent.style.transform = 'translateY(0)';
+      elapsed = 0;
+      playTimer.textContent = '00:00';
+
+      screenEdit.classList.add('hidden');
+      screenPlay.classList.add('active');
+
+      // Auto-play after short delay
+      setTimeout(() => play(), 600);
     });
 
-    // ── Speed ──
-    sliderSpeed.addEventListener('input', () => {
-      speed = parseInt(sliderSpeed.value);
-      valSpeed.textContent = speed;
-    });
-
-    // ── Settings toggle ──
-    btnSettings.addEventListener('click', () => {
-      controls.classList.toggle('show');
-      btnSettings.classList.toggle('active');
-    });
-
-    // ── Mirror ──
-    btnMirror.addEventListener('click', () => {
-      document.body.classList.toggle('mirror');
-      btnMirror.classList.toggle('active');
-    });
-
-    // ── Fullscreen ──
-    btnFull.addEventListener('click', () => {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
-        document.body.classList.add('fullscreen');
-      } else {
-        document.exitFullscreen();
-        document.body.classList.remove('fullscreen');
-      }
-    });
-
-    document.addEventListener('fullscreenchange', () => {
-      if (!document.fullscreenElement) {
-        document.body.classList.remove('fullscreen');
-      }
-    });
-
-    // ── Show bottom bar on touch in fullscreen ──
-    let hideTimeout;
-    document.addEventListener('touchstart', () => {
-      if (document.body.classList.contains('fullscreen')) {
-        bottomBar.classList.add('visible');
-        clearTimeout(hideTimeout);
-        hideTimeout = setTimeout(() => bottomBar.classList.remove('visible'), 3000);
-      }
+    // ── Back to edit ──
+    document.getElementById('tb-back').addEventListener('click', () => {
+      pause();
+      screenPlay.classList.remove('active');
+      screenEdit.classList.remove('hidden');
     });
 
     // ── Play / Pause ──
-    btnPlay.addEventListener('click', togglePlay);
+    tbPlay.addEventListener('click', togglePlay);
 
     function togglePlay() {
-      if (isPlaying) {
-        pause();
-      } else {
-        play();
-      }
+      isPlaying ? pause() : play();
     }
 
     function play() {
       isPlaying = true;
-      btnPlay.textContent = '⏸';
-      textEl.contentEditable = 'false';
+      tbPlay.textContent = '⏸';
       lastTime = performance.now();
-      animFrame = requestAnimationFrame(scroll);
-
-      // Timer
-      timerInterval = setInterval(() => {
-        elapsedSec++;
-        const m = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
-        const s = String(elapsedSec % 60).padStart(2, '0');
-        timerEl.textContent = `${m}:${s}`;
+      animFrame = requestAnimationFrame(tick);
+      timerRef = setInterval(() => {
+        elapsed++;
+        const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+        const s = String(elapsed % 60).padStart(2, '0');
+        playTimer.textContent = `${m}:${s}`;
       }, 1000);
     }
 
     function pause() {
       isPlaying = false;
-      btnPlay.textContent = '▶';
-      textEl.contentEditable = 'true';
+      tbPlay.textContent = '▶';
       cancelAnimationFrame(animFrame);
-      clearInterval(timerInterval);
+      clearInterval(timerRef);
     }
 
-    function scroll(now) {
+    function tick(now) {
       if (!isPlaying) return;
       const dt = (now - lastTime) / 1000;
       lastTime = now;
-      scrollPos += speed * dt;
 
-      const maxScroll = scrollEl.scrollHeight - window.innerHeight;
-      if (scrollPos > maxScroll) scrollPos = maxScroll;
+      const px = speedMap[speedLevel - 1] * dt;
+      scrollPos += px;
 
-      scrollEl.style.transform = `translateY(-${scrollPos}px)`;
-
-      // Progress
-      const pct = maxScroll > 0 ? Math.round((scrollPos / maxScroll) * 100) : 0;
-      progressEl.textContent = pct + '%';
-
+      const maxScroll = scrollContent.scrollHeight - window.innerHeight;
       if (scrollPos >= maxScroll) {
+        scrollPos = maxScroll;
+        scrollContent.style.transform = `translateY(-${scrollPos}px)`;
         pause();
         return;
       }
 
-      animFrame = requestAnimationFrame(scroll);
+      scrollContent.style.transform = `translateY(-${scrollPos}px)`;
+      animFrame = requestAnimationFrame(tick);
     }
 
     // ── Reset ──
-    btnReset.addEventListener('click', () => {
+    document.getElementById('tb-reset').addEventListener('click', () => {
       pause();
       scrollPos = 0;
-      scrollEl.style.transform = 'translateY(0)';
-      elapsedSec = 0;
-      timerEl.textContent = '00:00';
-      progressEl.textContent = '0%';
+      scrollContent.style.transform = 'translateY(0)';
+      elapsed = 0;
+      playTimer.textContent = '00:00';
     });
 
-    // ── Clear ──
-    btnClear.addEventListener('click', () => {
-      if (confirm('Xóa toàn bộ nội dung?')) {
-        textEl.textContent = '';
-        btnReset.click();
-      }
-    });
-
-    // ── Keyboard shortcuts ──
+    // ── Keyboard ──
     document.addEventListener('keydown', (e) => {
-      // Don't capture when editing text
-      if (textEl === document.activeElement && !isPlaying) return;
-
-      if (e.code === 'Space') {
-        e.preventDefault();
-        togglePlay();
-      } else if (e.code === 'ArrowUp') {
-        e.preventDefault();
-        speed = Math.min(200, speed + 10);
-        sliderSpeed.value = speed;
-        valSpeed.textContent = speed;
-      } else if (e.code === 'ArrowDown') {
-        e.preventDefault();
-        speed = Math.max(10, speed - 10);
-        sliderSpeed.value = speed;
-        valSpeed.textContent = speed;
+      if (document.activeElement === inputText) return;
+      if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+      if (e.code === 'ArrowUp') { e.preventDefault(); updateSpeed(1); }
+      if (e.code === 'ArrowDown') { e.preventDefault(); updateSpeed(-1); }
+      if (e.code === 'Escape') {
+        document.getElementById('tb-back').click();
       }
     });
 
-    // ── Init font size ──
-    textEl.style.fontSize = sliderSize.value + 'px';
-
-    // ── Save/Restore text from localStorage ──
-    const STORAGE_KEY = 'ori-teleprompter-text';
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) textEl.textContent = saved;
-
-    textEl.addEventListener('input', () => {
-      localStorage.setItem(STORAGE_KEY, textEl.textContent);
-    });
+    // ── Restore saved text ──
+    const savedText = localStorage.getItem('ori-tp-text');
+    const savedSize = localStorage.getItem('ori-tp-size');
+    const savedSpeed = localStorage.getItem('ori-tp-speed');
+    if (savedText) inputText.value = savedText;
+    if (savedSize) { fontSize = parseInt(savedSize); updateSize(0); }
+    if (savedSpeed) { speedLevel = parseInt(savedSpeed); updateSpeed(0); }
+    updateWordCount();
   </script>
 </body>
 </html>
