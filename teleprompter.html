@@ -427,6 +427,15 @@
     let fontSize = 36;
     let speedLevel = 3; // 1-13
     const speedMap = [20, 40, 65, 90, 120, 160, 200, 250, 310, 380, 460, 550, 660];
+    
+    function getCurrentSpeed() {
+      const idx = speedLevel - 1;
+      const lower = Math.floor(idx);
+      const upper = Math.ceil(idx);
+      if (lower === upper) return speedMap[lower];
+      return speedMap[lower] + (speedMap[upper] - speedMap[lower]) * (idx - lower);
+    }
+
     let isPlaying = false;
     let scrollPos = 0;
     let animFrame = null;
@@ -524,10 +533,10 @@
       speedBar.style.width = ((speedLevel - 1) / 12 * 100) + '%';
     }
 
-    document.getElementById('speed-down').addEventListener('click', () => updateSpeed(-1));
-    document.getElementById('speed-up').addEventListener('click', () => updateSpeed(1));
-    document.getElementById('tb-slow').addEventListener('click', () => updateSpeed(-1));
-    document.getElementById('tb-fast').addEventListener('click', () => updateSpeed(1));
+    document.getElementById('speed-down').addEventListener('click', () => updateSpeed(-0.5));
+    document.getElementById('speed-up').addEventListener('click', () => updateSpeed(0.5));
+    document.getElementById('tb-slow').addEventListener('click', () => updateSpeed(-0.5));
+    document.getElementById('tb-fast').addEventListener('click', () => updateSpeed(0.5));
 
     // ── Word count ──
     inputText.addEventListener('input', updateWordCount);
@@ -605,7 +614,7 @@
       lastTime = now;
 
       if (!isDragging) {
-        const px = speedMap[speedLevel - 1] * dt;
+        const px = getCurrentSpeed() * dt;
         scrollPos += px;
 
         const maxScroll = scrollWrap.scrollHeight - scrollWrap.clientHeight;
@@ -635,8 +644,8 @@
     document.addEventListener('keydown', (e) => {
       if (document.activeElement === inputText) return;
       if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
-      if (e.code === 'ArrowUp') { e.preventDefault(); updateSpeed(1); }
-      if (e.code === 'ArrowDown') { e.preventDefault(); updateSpeed(-1); }
+      if (e.code === 'ArrowUp') { e.preventDefault(); updateSpeed(0.5); }
+      if (e.code === 'ArrowDown') { e.preventDefault(); updateSpeed(-0.5); }
       if (e.code === 'Escape') {
         document.getElementById('tb-back').click();
       }
@@ -648,7 +657,7 @@
     const savedSpeed = localStorage.getItem('ori-tp-speed');
     if (savedText) inputText.value = savedText;
     if (savedSize) { fontSize = parseInt(savedSize); updateSize(0); }
-    if (savedSpeed) { speedLevel = parseInt(savedSpeed); updateSpeed(0); }
+    if (savedSpeed) { speedLevel = parseFloat(savedSpeed); updateSpeed(0); }
     updateWordCount();
   </script>
 </body>
