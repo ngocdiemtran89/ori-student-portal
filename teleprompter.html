@@ -246,11 +246,10 @@
       flex: 1;
       overflow: hidden;
       position: relative;
+      touch-action: none;
     }
 
     .scroll-content {
-      position: absolute;
-      left: 0; right: 0;
       padding: 42vh 7% 90vh 7%;
     }
 
@@ -439,8 +438,64 @@
     const screenEdit = document.getElementById('screen-edit');
     const screenPlay = document.getElementById('screen-play');
     const inputText  = document.getElementById('input-text');
+    const scrollWrap = document.querySelector('.scroll-wrap');
     const scrollContent = document.getElementById('scroll-content');
     const scrollText = document.getElementById('scroll-text');
+    
+    // ── Drag & Drop ──
+    let isDragging = false;
+    let startY = 0;
+    let startScrollPos = 0;
+    let wheelTimeout;
+
+    scrollWrap.addEventListener('touchstart', (e) => {
+      isDragging = true;
+      startY = e.touches[0].clientY;
+      startScrollPos = scrollPos;
+    }, {passive: false});
+
+    window.addEventListener('touchmove', (e) => {
+      if (!isDragging) return;
+      e.preventDefault(); // Prevent native pull-to-refresh / gestures
+      const dy = e.touches[0].clientY - startY;
+      scrollPos = startScrollPos - dy;
+      
+      const maxScroll = scrollWrap.scrollHeight - scrollWrap.clientHeight;
+      scrollPos = Math.max(0, Math.min(scrollPos, maxScroll));
+      scrollWrap.scrollTop = scrollPos;
+    }, {passive: false});
+
+    window.addEventListener('touchend', () => { isDragging = false; });
+    window.addEventListener('touchcancel', () => { isDragging = false; });
+
+    scrollWrap.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startY = e.clientY;
+      startScrollPos = scrollPos;
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      const dy = e.clientY - startY;
+      scrollPos = startScrollPos - dy;
+      
+      const maxScroll = scrollWrap.scrollHeight - scrollWrap.clientHeight;
+      scrollPos = Math.max(0, Math.min(scrollPos, maxScroll));
+      scrollWrap.scrollTop = scrollPos;
+    });
+
+    window.addEventListener('mouseup', () => { isDragging = false; });
+
+    scrollWrap.addEventListener('wheel', (e) => {
+      isDragging = true;
+      clearTimeout(wheelTimeout);
+      wheelTimeout = setTimeout(() => isDragging = false, 200);
+
+      scrollPos += e.deltaY;
+      const maxScroll = scrollWrap.scrollHeight - scrollWrap.clientHeight;
+      scrollPos = Math.max(0, Math.min(scrollPos, maxScroll));
+      scrollWrap.scrollTop = scrollPos;
+    }, {passive: true});
     const sizeVal    = document.getElementById('size-val');
     const sizeBar    = document.getElementById('size-bar');
     const speedVal   = document.getElementById('speed-val');
@@ -499,7 +554,7 @@
       scrollText.textContent = text;
       scrollText.style.fontSize = fontSize + 'px';
       scrollPos = 0;
-      scrollContent.style.transform = 'translateY(0)';
+      scrollWrap.scrollTop = 0;
       elapsed = 0;
       playTimer.textContent = '00:00';
 
@@ -549,18 +604,21 @@
       const dt = (now - lastTime) / 1000;
       lastTime = now;
 
-      const px = speedMap[speedLevel - 1] * dt;
-      scrollPos += px;
+      if (!isDragging) {
+        const px = speedMap[speedLevel - 1] * dt;
+        scrollPos += px;
 
-      const maxScroll = scrollContent.scrollHeight - window.innerHeight;
-      if (scrollPos >= maxScroll) {
-        scrollPos = maxScroll;
-        scrollContent.style.transform = `translateY(-${scrollPos}px)`;
-        pause();
-        return;
+        const maxScroll = scrollWrap.scrollHeight - scrollWrap.clientHeight;
+        if (scrollPos >= maxScroll) {
+          scrollPos = maxScroll;
+          scrollWrap.scrollTop = scrollPos;
+          pause();
+          return;
+        }
+
+        scrollWrap.scrollTop = scrollPos;
       }
 
-      scrollContent.style.transform = `translateY(-${scrollPos}px)`;
       animFrame = requestAnimationFrame(tick);
     }
 
@@ -568,7 +626,7 @@
     document.getElementById('tb-reset').addEventListener('click', () => {
       pause();
       scrollPos = 0;
-      scrollContent.style.transform = 'translateY(0)';
+      scrollWrap.scrollTop = 0;
       elapsed = 0;
       playTimer.textContent = '00:00';
     });
