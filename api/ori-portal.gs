@@ -43,8 +43,8 @@ function createCorsOutput(data) {
 // admin    : cần secret key (admin_*)
 // ══════════════════════════════════════
 const PUBLIC_ACTIONS  = ['test','courses','login','register', 'lookup_ref'];
-const STUDENT_ACTIONS = ['profile','history','referral','leaderboard'];
-const ADMIN_ACTIONS   = ['admin_list_students','admin_add_student','admin_add_history','admin_update_commission'];
+const STUDENT_ACTIONS = ['profile','history','referral','leaderboard','update_profile','request_withdrawal'];
+const ADMIN_ACTIONS   = ['admin_list_students','admin_add_student','admin_add_history','admin_update_commission','admin_list_withdrawals'];
 
 function checkAuth(action, body, params) {
   // Public — không cần kiểm tra
@@ -127,6 +127,7 @@ function doGet(e) {
       case 'lookup_ref': return createCorsOutput(lookupRefCode(e.parameter.ref || body.ref));
       case 'admin_add_student':      return createCorsOutput(handleRegister(body));
       case 'admin_list_students':    return createCorsOutput(adminListStudents());
+      case 'admin_list_withdrawals': return createCorsOutput(adminListWithdrawals());
       case 'admin_add_history':      return createCorsOutput(adminAddHistoryAPI(body));
       case 'admin_update_commission':return createCorsOutput(adminUpdateCommission(body));
       default:           return createCorsOutput({ ok: true, msg: 'ORI Portal API v3' });
@@ -166,9 +167,12 @@ function doPost(e) {
       case 'login':      return createCorsOutput(handleLogin(body.hoTen, body.sdt));
       case 'register':   return createCorsOutput(handleRegister(body));
       case 'admin_list_students':    return createCorsOutput(adminListStudents());
+      case 'admin_list_withdrawals': return createCorsOutput(adminListWithdrawals());
       case 'admin_add_student':      return createCorsOutput(handleRegister(body));
       case 'admin_add_history':      return createCorsOutput(adminAddHistoryAPI(body));
       case 'admin_update_commission':return createCorsOutput(adminUpdateCommission(body));
+      case 'update_profile':         return createCorsOutput(updateProfile(body));
+      case 'request_withdrawal':     return createCorsOutput(requestWithdrawal(body));
       default:           return createCorsOutput({ ok: false, error: 'Unknown action: ' + action });
     }
   } catch (err) {
@@ -558,6 +562,139 @@ function adminUpdateCommission(body) {
   }
 
   return { ok: true, message: 'Đã cập nhật trạng thái hoa hồng.' };
+}
+
+function adminListWithdrawals() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName(SH.GIOI_THIEU);
+  if (!sh) return { ok: false, error: 'Sheet GioiThieu không tồn tại.' };
+
+  const shHV = ss.getSheetByName(SH.HOC_VIEN);
+  const hvRows = shHV ? shHV.getDataRange().getValues() : [];
+  const hvHeaders = hvRows[0] || [];
+  
+  const hvMap = {}; // Map MaGioiThieu to Bank Info
+  const iMaGT_HV = hvHeaders.indexOf('MaGioiThieu');
+  const iNganHang = hvHeaders.indexOf('NganHang');
+  const iSTK = hvHeaders.indexOf('SoTaiKhoan');
+  const iCTK = hvHeaders.indexOf('ChuTaiKhoan');
+  
+  if (iNganHang > -1) {
+    for (let i = 1; i < hvRows.length; i++) {
+      const code = String(hvRows[i][iMaGT_HV]).trim();
+      if (code) {
+        hvMap[code] = {
+          bank: String(hvRows[i][iNganHang] || ''),
+          stk: String(hvRows[i][iSTK] || ''),
+          ctk: String(hvRows[i][iCTK] || '')
+        };
+      }
+    }
+  }
+
+  const rows = sh.getDataRange().getValues();
+  const headers = rows[0];
+  const iTrangThai = headers.indexOf('TrangThaiHH');
+  const iNguoiGT = headers.indexOf('NguoiGioiThieu');
+  const iMaGT = headers.indexOf('MaGioiThieu');
+  const iTien = headers.indexOf('HoaHong_10pct');
+
+  const pendingList = [];
+  for (let i = 1; i < rows.length; i++) {
+    const status = String(rows[i][iTrangThai]).trim();
+    if (status === 'DangXuLy') {
+      const code = String(rows[i][iMaGT]).trim();
+      const bankInfo = hvMap[code] || {};
+      pendingList.push({
+        rowIndex: i,
+        nguoiGioiThieu: rows[i][iNguoiGT],
+        maGioiThieu: code,
+        hoaHong: rows[i][iTien],
+        nganHang: bankInfo.bank,
+        soTaiKhoan: bankInfo.stk,
+        chuTaiKhoan: bankInfo.ctk
+      });
+    }
+  }
+
+  return { ok: true, data: pendingList };
+}
+
+function updateProfile(body) {
+  const { maHV, nganHang, soTaiKhoan, chuTaiKhoan } = body;
+  if (!maHV) return { ok: false, error: 'Thiếu mã học viên.' };
+
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sh = ss.getSheetByName(SH.HOC_VIEN);
+  if (!sh) return { ok: false, error: 'Sheet HocVien không tồn tại.' };
+
+  const rows = sh.getDataRange().getValues();
+  const headers = rows[0];
+  const iMaHV = headers.indexOf('MaHV');
+
+  // Check and add columns if they don't exist
+  let iNganHang = headers.indexOf('NganHang');
+  if (iNganHang === -1) { sh.getRange(1, headers.length + 1).setValue('NganHang'); iNganHang = headers.length; headers.push('NganHang'); }
+  let iSTK = headers.indexOf('SoTaiKhoan');
+  if (iSTK === -1) { sh.getRange(1, headers.length + 1).setValue('SoTaiKhoan'); iSTK = headers.length; headers.push('SoTaiKhoan'); }
+  let iCTK = headers.indexOf('ChuTaiKhoan');
+  if (iCTK === -1) { sh.getRange(1, headers.length + 1).setValue('ChuTaiKhoan'); iCTK = headers.length; headers.push('ChuTaiKhoan'); }
+
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][iMaHV]).trim() === String(maHV).trim()) {
+      sh.getRange(i + 1, iNganHang + 1).setValue(nganHang || '');
+      sh.getRange(i + 1, iSTK + 1).setValue(soTaiKhoan || '');
+      sh.getRange(i + 1, iCTK + 1).setValue(chuTaiKhoan || '');
+      return { ok: true, message: 'Cập nhật thông tin thanh toán thành công.' };
+    }
+  }
+  return { ok: false, error: 'Không tìm thấy học viên.' };
+}
+
+function requestWithdrawal(body) {
+  const { maHV } = body;
+  if (!maHV) return { ok: false, error: 'Thiếu mã học viên.' };
+
+  // First get the referral code for this student
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const shHV = ss.getSheetByName(SH.HOC_VIEN);
+  let refCode = '';
+  if (shHV) {
+    const hvRows = shHV.getDataRange().getValues();
+    const hvHeaders = hvRows[0];
+    const iMaHV = hvHeaders.indexOf('MaHV');
+    const iMaGT = hvHeaders.indexOf('MaGioiThieu');
+    for (let i = 1; i < hvRows.length; i++) {
+      if (String(hvRows[i][iMaHV]).trim() === String(maHV).trim()) {
+        refCode = String(hvRows[i][iMaGT]).trim();
+        break;
+      }
+    }
+  }
+
+  if (!refCode) return { ok: false, error: 'Không tìm thấy mã giới thiệu.' };
+
+  const sh = ss.getSheetByName(SH.GIOI_THIEU);
+  if (!sh) return { ok: false, error: 'Sheet GioiThieu không tồn tại.' };
+
+  const rows = sh.getDataRange().getValues();
+  const headers = rows[0];
+  const iTrangThai = headers.indexOf('TrangThaiHH');
+  const iMaGTC = headers.indexOf('MaGioiThieu');
+
+  let updated = 0;
+  for (let i = 1; i < rows.length; i++) {
+    if (String(rows[i][iMaGTC]).trim() === refCode) {
+      const status = String(rows[i][iTrangThai]).trim();
+      if (status === 'ChuaThanhToan' || status === 'Chờ TT') {
+        sh.getRange(i + 1, iTrangThai + 1).setValue('DangXuLy');
+        updated++;
+      }
+    }
+  }
+
+  if (updated === 0) return { ok: false, error: 'Không có khoản hoa hồng nào đủ điều kiện rút.' };
+  return { ok: true, message: 'Đã gửi yêu cầu rút tiền thành công!' };
 }
 
 // ══════════════════════════════════════

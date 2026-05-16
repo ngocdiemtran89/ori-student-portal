@@ -5,7 +5,7 @@
 
 const API = (() => {
   // ⚠️ THAY ĐỔI SAU KHI DEPLOY APPS SCRIPT
-  const BASE_URL = 'https://script.google.com/macros/s/AKfycbzsdLmNQml4XonIzofnWr7ITeNipdCVJOzF6vCjdgl53kxkaMfM2r6MTtjqWFfIwUep/exec';
+  const BASE_URL = 'https://script.google.com/macros/s/AKfycbwYMBpdVh6ft3xiTEHlEMWJD5ccL_lSfYTHtkAQB_5xfMHwxUyQO209m8hnmVtRIg85/exec';
 
   async function request(method, params = {}) {
     try {
@@ -40,6 +40,9 @@ const API = (() => {
     getProfile(maHV) {
       return request('GET', { action: 'profile', maHV });
     },
+    updateProfile(data) {
+      return request('POST', { action: 'update_profile', ...data });
+    },
 
     // ── Learning History ──
     getHistory(maHV) {
@@ -49,6 +52,9 @@ const API = (() => {
     // ── Referral ──
     getReferralStats(maHV) {
       return request('GET', { action: 'referral', maHV });
+    },
+    requestWithdrawal(maHV) {
+      return request('POST', { action: 'request_withdrawal', maHV });
     },
 
     // ── Leaderboard ──
@@ -79,6 +85,9 @@ const API = (() => {
     // ── Admin (protected by secret) ──
     adminListStudents() {
       return request('POST', { action: 'admin_list_students', secret: API.getSecret() });
+    },
+    adminListWithdrawals() {
+      return request('POST', { action: 'admin_list_withdrawals', secret: API.getSecret() });
     },
     adminAddStudent(data) {
       return request('POST', { action: 'admin_add_student', secret: API.getSecret(), ...data });

@@ -35,14 +35,37 @@ const Dashboard = (() => {
       setupNavigation(); // Gọi lại để đăng ký click cho nav item mới
 
       // Hỏi secret nếu chưa có
+    // Hỏi secret nếu chưa có
       if (!API.getSecret()) {
         const s = prompt('🔐 Nhập mã bảo mật Admin (hỏi quản trị viên):');
         if (s) API.setSecret(s.trim());
       }
     }
 
+    setupBankForm();
+
     // Load overview tab by default
     switchTab('overview');
+  }
+
+  function setupBankForm() {
+    const formBank = document.getElementById('form-update-bank');
+    if (formBank) {
+      formBank.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btnText = document.getElementById('btn-bank-text');
+        btnText.innerHTML = '<div class="spinner"></div> Đang lưu...';
+        const result = await API.updateProfile({
+          maHV: Auth.getMaHV(),
+          nganHang: document.getElementById('bank-name').value.trim(),
+          soTaiKhoan: document.getElementById('bank-acc').value.trim(),
+          chuTaiKhoan: document.getElementById('bank-owner').value.trim()
+        });
+        if(result.ok) showToast('✅ Cập nhật thành công', 'success');
+        else showToast('❌ ' + result.error, 'error');
+        btnText.textContent = '💾 Cập Nhật STK';
+      });
+    }
   }
 
   // ── Render user info in sidebar ──
@@ -302,6 +325,34 @@ const Dashboard = (() => {
     setTextContent('comm-paid', formatMoney(d.paidCommission || 0));
     setTextContent('comm-unpaid', formatMoney(d.unpaidCommission || 0));
 
+    const btnWithdraw = document.getElementById('btn-request-withdraw');
+    if (btnWithdraw) {
+      if (d.unpaidCommission > 0) {
+        const hasPending = d.referrals.some(r => r.TrangThaiHH === 'DangXuLy');
+        btnWithdraw.style.display = 'inline-block';
+        if (hasPending) {
+          btnWithdraw.disabled = true;
+          btnWithdraw.textContent = '⏳ Đang xử lý yêu cầu rút tiền';
+        } else {
+          btnWithdraw.disabled = false;
+          btnWithdraw.textContent = '💸 Yêu Cầu Rút Tiền';
+          btnWithdraw.onclick = async () => {
+            btnWithdraw.innerHTML = '<div class="spinner"></div> Đang gửi...';
+            const res = await API.requestWithdrawal(maHV);
+            if (res.ok) {
+              showToast('✅ Đã gửi yêu cầu rút tiền!', 'success');
+              loadCommission(maHV);
+            } else {
+              showToast('❌ ' + res.error, 'error');
+              btnWithdraw.textContent = '💸 Yêu Cầu Rút Tiền';
+            }
+          };
+        }
+      } else {
+        btnWithdraw.style.display = 'none';
+      }
+    }
+
     const tbody = document.getElementById('commission-tbody');
     if (tbody) {
       if (d.referrals.length === 0) {
@@ -310,7 +361,9 @@ const Dashboard = (() => {
         tbody.innerHTML = d.referrals.map((r, i) => {
           const statusBadge = r.TrangThaiHH === 'DaThanhToan'
             ? '<span class="badge badge-success">✓ Đã thanh toán</span>'
-            : '<span class="badge badge-warning">⏳ Chờ thanh toán</span>';
+            : r.TrangThaiHH === 'DangXuLy'
+              ? '<span class="badge badge-info">⏳ Đang xử lý</span>'
+              : '<span class="badge badge-warning">⏳ Chờ thanh toán</span>';
           return `
             <tr>
               <td>${i + 1}</td>
@@ -374,24 +427,34 @@ const Dashboard = (() => {
 
   // ── Profile Tab ──
   async function loadProfile(maHV) {
-    const user = Auth.get();
-    if (!user) return;
-
+    const cachedUser = Auth.get();
+    if (!cachedUser) return;
+    
+    // Set static fields from cache first
     const fields = {
-      'profile-name': user.HoTen,
-      'profile-phone': user.SDT,
-      'profile-cccd': user.CCCD || 'Chưa cập nhật',
-      'profile-email': user.Email || 'Chưa cập nhật',
-      'profile-start': user.NgayVaoHoc || '—',
-      'profile-course': user.KhoaHoc || 'Chưa có',
-      'profile-status': getStatusText(user.TrangThai),
-      'profile-ref-code': user.MaGioiThieu || '—',
-      'profile-created': user.NgayTao || '—',
+      'profile-name': cachedUser.HoTen,
+      'profile-phone': cachedUser.SDT,
+      'profile-cccd': cachedUser.CCCD || 'Chưa cập nhật',
+      'profile-email': cachedUser.Email || 'Chưa cập nhật',
+      'profile-start': cachedUser.NgayVaoHoc || '—',
+      'profile-course': cachedUser.KhoaHoc || 'Chưa có',
+      'profile-status': getStatusText(cachedUser.TrangThai),
+      'profile-ref-code': cachedUser.MaGioiThieu || '—',
+      'profile-created': cachedUser.NgayTao || '—',
     };
 
     Object.entries(fields).forEach(([id, value]) => {
       setTextContent(id, value);
     });
+
+    // Fetch fresh profile to get bank info
+    const result = await API.getProfile(maHV);
+    if(result.ok) {
+      const user = result.data;
+      document.getElementById('bank-name').value = user.NganHang || '';
+      document.getElementById('bank-acc').value = user.SoTaiKhoan || '';
+      document.getElementById('bank-owner').value = user.ChuTaiKhoan || '';
+    }
   }
 
   // ── Leaderboard ──
@@ -513,6 +576,50 @@ const Dashboard = (() => {
 
     // Populate dropdowns for forms
     populateAdminDropdowns(students);
+    
+    // Load withdrawals
+    loadAdminWithdrawals();
+  }
+  
+  async function loadAdminWithdrawals() {
+    const result = await API.adminListWithdrawals();
+    if (!result.ok) return;
+    const pendingList = result.data || [];
+    const tbody = document.getElementById('admin-withdrawals-tbody');
+    if(!tbody) return;
+    
+    if(pendingList.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted" style="padding:40px">🎉 Không có yêu cầu rút tiền nào</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = pendingList.map(item => `
+      <tr>
+        <td class="font-semibold">${item.nguoiGioiThieu} <br> <small class="text-muted text-xs">${item.maGioiThieu}</small></td>
+        <td class="font-bold text-accent">${formatMoney(item.hoaHong)}</td>
+        <td class="text-sm">
+          NH: <strong>${item.nganHang || '—'}</strong><br>
+          STK: <strong>${item.soTaiKhoan || '—'}</strong><br>
+          Tên: <strong>${item.chuTaiKhoan || '—'}</strong>
+        </td>
+        <td>
+          <button class="login-btn" style="padding: 6px 12px; font-size: 0.8rem; width: auto;" onclick="Dashboard.approveCommission(${item.rowIndex})">
+            ✅ Đã Chuyển Khoản
+          </button>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function approveCommission(rowIndex) {
+    if(!confirm('Xác nhận: Bạn đã chuyển khoản thành công và muốn đổi trạng thái thành "Đã thanh toán"?')) return;
+    const result = await API.adminUpdateCommission(rowIndex, 'DaThanhToan');
+    if(result.ok) {
+      showToast('✅ Đã cập nhật trạng thái!', 'success');
+      loadAdminWithdrawals();
+    } else {
+      showToast('❌ Lỗi: ' + result.error, 'error');
+    }
   }
 
   function populateAdminDropdowns(students) {
@@ -646,7 +753,7 @@ const Dashboard = (() => {
     }, 3000);
   }
 
-  return { init, switchTab, showToast, formatMoney };
+  return { init, switchTab, showToast, formatMoney, approveCommission };
 })();
 
 // Init on DOM ready

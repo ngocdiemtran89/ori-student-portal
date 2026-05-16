@@ -373,6 +373,13 @@
               <div class="label">Chờ thanh toán</div>
             </div>
           </div>
+          
+          <div id="withdraw-section" style="margin-bottom: 24px; text-align: center;">
+            <button id="btn-request-withdraw" class="login-btn" style="background:linear-gradient(135deg, #f59e0b, #f97316); width:auto; padding: 12px 24px; display: none;">
+              💸 Yêu Cầu Rút Tiền
+            </button>
+            <p id="withdraw-msg" class="text-sm text-muted" style="margin-top: 8px; display: none;">* Cập nhật số tài khoản ngân hàng ở mục Cá nhân để rút tiền.</p>
+          </div>
 
           <div class="card">
             <div class="card-header">
@@ -449,6 +456,32 @@
                 <span class="field-value" id="profile-created">—</span>
               </div>
             </div>
+          </div>
+
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <span class="card-title">💳 Thông Tin Thanh Toán</span>
+              <span class="badge badge-warning">Nhận Hoa Hồng</span>
+            </div>
+            <form id="form-update-bank" style="padding-top: 16px;">
+              <div class="form-grid">
+                <div class="input-group">
+                  <label>Ngân hàng</label>
+                  <input type="text" id="bank-name" placeholder="VD: Vietcombank">
+                </div>
+                <div class="input-group">
+                  <label>Số tài khoản</label>
+                  <input type="text" id="bank-acc" placeholder="VD: 0123456789">
+                </div>
+                <div class="input-group">
+                  <label>Tên chủ tài khoản</label>
+                  <input type="text" id="bank-owner" placeholder="VD: NGUYEN VAN A">
+                </div>
+              </div>
+              <button type="submit" class="login-btn" style="margin-top: 16px; width: 100%; max-width: 200px;">
+                <span id="btn-bank-text">💾 Cập Nhật STK</span>
+              </button>
+            </form>
           </div>
         </div>
 
@@ -731,6 +764,28 @@
                 </thead>
                 <tbody id="admin-students-tbody">
                   <tr><td colspan="7" class="text-center text-muted" style="padding:40px">⏳ Đang tải...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Withdrawals list -->
+          <div class="card" style="margin-top: 24px;">
+            <div class="card-header">
+              <span class="card-title">💸 Yêu Cầu Rút Tiền</span>
+            </div>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Người GT (CTV)</th>
+                    <th>Hoa Hồng</th>
+                    <th>Thông Tin CK</th>
+                    <th>Thao Tác</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-withdrawals-tbody">
+                  <tr><td colspan="4" class="text-center text-muted" style="padding:40px">⏳ Đang tải...</td></tr>
                 </tbody>
               </table>
             </div>
